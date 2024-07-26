@@ -1,0 +1,28 @@
+
+{
+    "Trials":
+    [
+
+        {
+            "trialID": 0,
+            "keystrokes": [],
+            "result": 0,
+            "startTime": 0,
+            "endTime": 0,
+            "playerX": [],
+            "playerY": []
+        },
+        {
+            "trialID": 1,
+            "keystrokes": [],
+            "result": 0,
+            "startTime": 0,
+            "endTime": 0,
+            "playerX": [],
+            "playerY": []
+        }
+
+
+    ]
+
+}
