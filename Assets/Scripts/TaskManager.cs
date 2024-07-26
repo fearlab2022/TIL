@@ -106,20 +106,18 @@ private IEnumerator StartTrial(Trial trial)
         Time.timeScale = 0;
         Debug.Log("Fixation Trial");
         ShowMiddleScreen("+");
-        yield return new WaitForSeconds(5.0f);
-        Time.timeScale = 0;
+        yield return new WaitForSecondsRealtime(5.0f);
+        Time.timeScale = 1;
         HideMiddleScreen();
         isTrialRunning = false;
-
-        Debug.Log("Trial ended.");            
+        Debug.Log("Trial ended.");
+        yield break;     
     }
 
 
     player = GameObject.FindWithTag("Player");
     playerMovement = player.GetComponent<PlayerMovement>();
 
-
-    
 
     playerMovement.SetInitialPosition(trial.startX, trial.startY);
     SpriteRenderer spriteRenderer = player.GetComponent<SpriteRenderer>();
@@ -131,7 +129,7 @@ private IEnumerator StartTrial(Trial trial)
     if (chaser != null)
     {
         chaser.chaserRender = trial.predRender;
-        chaser.chase = trial.predChase;
+        
     }
 
     CageRenderer cageRenderer = FindObjectOfType<CageRenderer>();
@@ -153,6 +151,8 @@ private IEnumerator StartTrial(Trial trial)
     }
 
     Debug.Log("Trial started with parameters: " + trial.ToString());
+
+    chaser.chase = trial.predChase;
     playerMovement.EnableMovement();
     
     if (trial.predChase)
