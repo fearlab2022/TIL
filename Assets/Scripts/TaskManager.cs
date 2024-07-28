@@ -5,21 +5,25 @@ using TMPro;
 
 public class TaskManager : MonoBehaviour
 {
+
+    // public variables
     public static TaskManager Instance;
-
-    private List<Trial> trials;
-    private int currentTrialIndex = 0;
-    private bool isTrialRunning = false;
-
     public GameObject middleScreenCanvas;
     public TextMeshProUGUI middleScreenText;
 
-    private GridManager gridManager;
-    private Vector3 chaserStartPosition = new Vector3(4, 4, 0); 
     public PlayerMovement playerMovement;
     public GameObject player;
     public Pathfinding pathfinding;
     public GameObject cage;
+    public GridManager gridManager;
+
+
+    // private variables
+    private List<Trial> trials;
+    private int currentTrialIndex = 0;
+    private bool isTrialRunning = false;
+    private Vector3 chaserStartPosition = new Vector3(4, 4, 0); 
+    private SessionGenerator sessionGenerator;
 
     private void Awake()
     {
@@ -33,6 +37,9 @@ public class TaskManager : MonoBehaviour
             Destroy(gameObject);
         }
     }
+
+
+    #region GameLogic + Trial Running Pipeline
 
     private void Start()
     {
@@ -53,6 +60,7 @@ public class TaskManager : MonoBehaviour
         }
         Chaser chaser = FindObjectOfType<Chaser>();
         chaser.Initialize(gridManager, player.transform);
+        sessionGenerator = FindObjectOfType<SessionGenerator>();
         
 
     }
@@ -179,7 +187,13 @@ private IEnumerator StartTrial(Trial trial)
     playerMovement.DisableMovement();
     
     Debug.Log("Trial ended.");
+    sessionGenerator.PushDataToDatabase(currentTrialIndex);
 }
+#endregion
+
+
+
+#region Helper Functions
 
     private void ShowMiddleScreen(string text)
     {
@@ -219,3 +233,5 @@ private IEnumerator StartTrial(Trial trial)
         isTrialRunning = false;
     }
 }
+
+#endregion

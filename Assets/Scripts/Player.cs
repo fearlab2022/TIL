@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections.Generic;
 
 public class PlayerMovement : MonoBehaviour
 {
@@ -12,13 +13,20 @@ public class PlayerMovement : MonoBehaviour
     private int maxY = 9;
 
     public float moveDelay = 0.2f;
+    private float moveTimer;
+    private bool canMove = false;
+
+    private List<JoystickInputHandler> joystickInputsList = new List<JoystickInputHandler>();
+
     public GameObject cage;
     private CageRenderer cageRenderer;
 
-    private bool canMove = false;
-    private float moveTimer;
+    private void Start()
+    {
+        targetPosition = transform.position;
+    }
 
-    void Update()
+    private void Update()
     {
         if (canMove)
         {
@@ -38,60 +46,42 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
-    void HandleMovement()
+    private void HandleMovement()
     {
-        Vector3 direction = Vector3.zero;
+        float horizontalInput = Input.GetAxis("Horizontal");
+        float verticalInput = Input.GetAxis("Vertical");
 
-        if (Input.GetKey(KeyCode.UpArrow) && targetPosition.y < maxY)
+        if (!isMoving && (horizontalInput != 0 || verticalInput != 0))
         {
-            if (cageRenderer != null && cageRenderer.render && (targetPosition.x == 4 || targetPosition.x == 5) && (targetPosition.y + 1 == 4))
-            {
-                return;
-            }
-            direction = Vector3.up;
-        }
-        else if (Input.GetKey(KeyCode.DownArrow) && targetPosition.y > minY)
-        {
-            if (cageRenderer != null && cageRenderer.render && (targetPosition.x == 4 || targetPosition.x == 5) && (targetPosition.y - 1 == 5))
-            {
-                return;
-            }
-            direction = Vector3.down;
-        }
-        else if (Input.GetKey(KeyCode.LeftArrow) && targetPosition.x > minX)
-        {
-            if (cageRenderer != null && cageRenderer.render && (targetPosition.y == 4 || targetPosition.y == 5) && targetPosition.x - 1 == 5)
-            {
-                return;
-            }
-            direction = Vector3.left;
-        }
-        else if (Input.GetKey(KeyCode.RightArrow) && targetPosition.x < maxX)
-        {
-            if (cageRenderer != null && cageRenderer.render && (targetPosition.y == 4 || targetPosition.y == 5) && targetPosition.x + 1 == 4)
-            {
-                return;
-            }
-            direction = Vector3.right;
-        }
+            Vector3 moveDirection = Vector3.zero;
 
-        if (direction != Vector3.zero)
-        {
-            if (moveTimer <= 0f)
+            if (Mathf.Abs(horizontalInput) > Mathf.Abs(verticalInput))
             {
-                Vector3 newPosition = targetPosition + direction;
-                if (newPosition.x >= minX && newPosition.x <= maxX && newPosition.y >= minY && newPosition.y <= maxY)
-                {
-                    targetPosition = newPosition;
-                    isMoving = true;
-                    moveTimer = moveDelay;  
-                }
+                moveDirection = horizontalInput > 0 ? Vector3.right : Vector3.left;
             }
             else
             {
-                moveTimer -= Time.deltaTime;  
+                moveDirection = verticalInput > 0 ? Vector3.up : Vector3.down;
             }
+
+            targetPosition += moveDirection;
+            targetPosition = new Vector3(
+                Mathf.Clamp(targetPosition.x, minX, maxX),
+                Mathf.Clamp(targetPosition.y, minY, maxY),
+                targetPosition.z
+            );
+
+            isMoving = true;
+
+            StartCoroutine(MoveCooldown());
         }
+    }
+
+    private System.Collections.IEnumerator MoveCooldown()
+    {
+        canMove = false;
+        yield return new WaitForSeconds(moveDelay);
+        canMove = true;
     }
 
     public void Initialize(GameObject cage)
@@ -108,8 +98,8 @@ public class PlayerMovement : MonoBehaviour
 
     public void SetInitialPosition(float x, float y)
     {
-        transform.position = new Vector3(x, y, transform.position.z); // Set player's position
-        targetPosition = transform.position; // Ensure targetPosition is in sync with the initial position
+        transform.position = new Vector3(x, y, transform.position.z);
+        targetPosition = transform.position;
     }
 
     public void EnableMovement()
@@ -121,4 +111,10 @@ public class PlayerMovement : MonoBehaviour
     {
         canMove = false;
     }
+}
+
+public class JoystickInputHandler
+{
+    public Vector2 movementInput;
+    public float time;
 }

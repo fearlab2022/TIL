@@ -10,6 +10,8 @@ public class Pathfinding
         this.gridManager = gridManager;
     }
 
+    #region PathFinding Algorithim
+
     public List<Tile> FindPath(Tile startTile, Tile targetTile)
     {
         List<Tile> openList = new List<Tile>();
@@ -62,6 +64,10 @@ public class Pathfinding
         return null;
     }
 
+    #endregion
+
+    #region Helper Functions
+
     private List<Tile> RetracePath(Tile startTile, Tile endTile)
     {
         List<Tile> path = new List<Tile>();
@@ -105,3 +111,4 @@ public class Pathfinding
         return neighbors;
     }
 }
+#endregion

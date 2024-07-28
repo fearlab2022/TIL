@@ -37,6 +37,21 @@ public class SessionGenerator : MonoBehaviour
         }
     }
 
+    public void PushDataToDatabase(int trialNumber)
+    {
+        persistentDataPath = "https://sprint2-95476-default-rtdb.firebaseio.com/" + trialNumber;
+        trialData data = new trialData();   
+        data.trialNumber = trialNumber;     
+        RestClient.Put(persistentDataPath + "/" + trialNumber + "_experiment.json", data);
+        Debug.Log($"Data for trial {trialNumber} pushed to database.");
+    }
+
+    public class trialData {
+
+        public int trialNumber;
+        
+    }
+
     public class ExperimentDescription
         {
             public string condition;
