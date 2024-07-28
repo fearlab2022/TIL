@@ -13,10 +13,10 @@ public class PlayerMovement : MonoBehaviour
     private int maxY = 9;
 
     public float moveDelay = 0.2f;
-    private float moveTimer;
     private bool canMove = false;
 
     private List<JoystickInputHandler> joystickInputsList = new List<JoystickInputHandler>();
+    private Dictionary<float, Vector2> inputRecords = new Dictionary<float, Vector2>();
 
     public GameObject cage;
     private CageRenderer cageRenderer;
@@ -24,10 +24,17 @@ public class PlayerMovement : MonoBehaviour
     private void Start()
     {
         targetPosition = transform.position;
+        if (cage != null)
+        {
+            cageRenderer = cage.GetComponent<CageRenderer>();
+        }
     }
+
+    #region Move Logic
 
     private void Update()
     {
+        Debug.Log($"Update called. CanMove: {canMove}, IsMoving: {isMoving}");
         if (canMove)
         {
             if (isMoving)
@@ -64,17 +71,41 @@ public class PlayerMovement : MonoBehaviour
                 moveDirection = verticalInput > 0 ? Vector3.up : Vector3.down;
             }
 
-            targetPosition += moveDirection;
+            Vector3 nextPosition = targetPosition + moveDirection;
+
+            if (cageRenderer != null && cageRenderer.render)
+            {
+                if (nextPosition.x >= 4 && nextPosition.x <= 5 && nextPosition.y >= 4 && nextPosition.y <= 5)
+                {
+                    return;
+                }
+            }
+
             targetPosition = new Vector3(
-                Mathf.Clamp(targetPosition.x, minX, maxX),
-                Mathf.Clamp(targetPosition.y, minY, maxY),
-                targetPosition.z
+                Mathf.Clamp(nextPosition.x, minX, maxX),
+                Mathf.Clamp(nextPosition.y, minY, maxY),
+                nextPosition.z
             );
 
             isMoving = true;
-
+            RecordInput(new Vector2(horizontalInput, verticalInput));
             StartCoroutine(MoveCooldown());
         }
+    }
+
+    #endregion
+
+    #region Helper Functions
+
+    private void RecordInput(Vector2 input)
+    {
+        float timestamp = Time.time;
+        inputRecords[timestamp] = input;
+    }
+
+    public Dictionary<float, Vector2> ExportInputRecords()
+    {
+        return new Dictionary<float, Vector2>(inputRecords);
     }
 
     private System.Collections.IEnumerator MoveCooldown()
@@ -88,7 +119,10 @@ public class PlayerMovement : MonoBehaviour
     {
         this.cage = cage;
         targetPosition = transform.position;
-        cageRenderer = cage.GetComponent<CageRenderer>();
+        if (cage != null)
+        {
+            cageRenderer = cage.GetComponent<CageRenderer>();
+        }
 
         if (cageRenderer == null)
         {
@@ -104,13 +138,27 @@ public class PlayerMovement : MonoBehaviour
 
     public void EnableMovement()
     {
+        Debug.Log("EnableMovement called");
         canMove = true;
     }
 
     public void DisableMovement()
     {
+        Debug.Log("DisableMovement called");
         canMove = false;
+        isMoving = false;
     }
+
+    private void OnTriggerEnter2D(Collider2D other)
+    {
+        if (other.CompareTag("Chaser"))
+        {
+            canMove = false;
+            Debug.Log("Player caught by chaser, movement disabled.");
+        }
+    }
+
+    #endregion
 }
 
 public class JoystickInputHandler

@@ -5,10 +5,11 @@ using TMPro;
 
 public class TaskManager : MonoBehaviour
 {
-
-    // public variables
+    // Public variables
     public static TaskManager Instance;
     public GameObject middleScreenCanvas;
+    public GameObject startTrialScreenCanvas;
+    public TextMeshProUGUI startTrialScreenText;
     public TextMeshProUGUI middleScreenText;
 
     public PlayerMovement playerMovement;
@@ -17,13 +18,15 @@ public class TaskManager : MonoBehaviour
     public GameObject cage;
     public GridManager gridManager;
 
+    public Dictionary<float, Vector2> userVectorInputs;
 
-    // private variables
+    // Private variables
     private List<Trial> trials;
     private int currentTrialIndex = 0;
     private bool isTrialRunning = false;
-    private Vector3 chaserStartPosition = new Vector3(4, 4, 0); 
+    private Vector3 chaserStartPosition = new Vector3(4, 4, 0);
     private SessionGenerator sessionGenerator;
+    private float playerQuestionInput = 0;
 
     private void Awake()
     {
@@ -38,31 +41,31 @@ public class TaskManager : MonoBehaviour
         }
     }
 
-
-    #region GameLogic + Trial Running Pipeline
-
     private void Start()
     {
-
         gridManager = FindObjectOfType<GridManager>();
-
         gridManager.GenerateGrid();
-        
+
         pathfinding = new Pathfinding(gridManager);
 
         player = GameObject.FindWithTag("Player");
         playerMovement = player.GetComponent<PlayerMovement>();
-        GameObject cage = GameObject.Find("Square");
 
-        if (playerMovement != null && player != null)
+        cage = GameObject.Find("Square");
+        CageRenderer cageRenderer = FindObjectOfType<CageRenderer>();
+        cageRenderer.render = false;
+
+        if (playerMovement != null)
         {
             playerMovement.Initialize(cage);
         }
+
         Chaser chaser = FindObjectOfType<Chaser>();
         chaser.Initialize(gridManager, player.transform);
-        sessionGenerator = FindObjectOfType<SessionGenerator>();
-        
+        chaser.chase = false;
+        chaser.chaserRender = false;
 
+        sessionGenerator = FindObjectOfType<SessionGenerator>();
     }
 
     public void InitializeTrials(List<Trial> trialList)
@@ -87,7 +90,6 @@ public class TaskManager : MonoBehaviour
             Debug.Log("Starting Trial: " + (currentTrialIndex + 1));
 
             SetChaserStartPosition();
-
             yield return StartCoroutine(StartTrial(currentTrial));
 
             currentTrialIndex++;
@@ -105,95 +107,102 @@ public class TaskManager : MonoBehaviour
         }
     }
 
-private IEnumerator StartTrial(Trial trial)
-{
-    isTrialRunning = true;
-
-    if (trial.EOB)
+    private IEnumerator StartTrial(Trial trial)
     {
-        Time.timeScale = 0;
-        Debug.Log("Fixation Trial");
-        ShowMiddleScreen("+");
-        yield return new WaitForSecondsRealtime(5.0f);
-        Time.timeScale = 1;
-        HideMiddleScreen();
-        isTrialRunning = false;
-        Debug.Log("Trial ended.");
-        yield break;     
-    }
+        isTrialRunning = true;
 
-
-    player = GameObject.FindWithTag("Player");
-    playerMovement = player.GetComponent<PlayerMovement>();
-
-
-    playerMovement.SetInitialPosition(trial.startX, trial.startY);
-    SpriteRenderer spriteRenderer = player.GetComponent<SpriteRenderer>();
-    spriteRenderer.enabled = true;
-    
- 
- 
-    Chaser chaser = FindObjectOfType<Chaser>();
-    if (chaser != null)
-    {
-        chaser.chaserRender = trial.predRender;
-        
-    }
-
-    CageRenderer cageRenderer = FindObjectOfType<CageRenderer>();
-    if (cageRenderer != null)
-    {
-        cageRenderer.render = trial.cageRender;
-        cageRenderer.SetColor(trial.isGreen ? Color.green : Color.white);
-    }
-
-    if (trial.showQuestionScreen)
-    {
-        Time.timeScale = 0;
-        yield return new WaitForSecondsRealtime(2.0f);
-        Time.timeScale = 1;
-
-        ShowMiddleScreen(trial.questionText);
-        yield return StartCoroutine(WaitForAnyKey());
-        HideMiddleScreen();
-    }
-
-    Debug.Log("Trial started with parameters: " + trial.ToString());
-
-    chaser.chase = trial.predChase;
-    playerMovement.EnableMovement();
-    
-    if (trial.predChase)
-    {
-        while (chaser != null && chaser.chase)
+        if (trial.EOB)
         {
-            yield return null;
+            Time.timeScale = 0;
+            Debug.Log("Fixation Trial");
+            ShowMiddleScreen("+");
+            yield return new WaitForSecondsRealtime(5.0f);
+            Time.timeScale = 1;
+            HideMiddleScreen();
+            isTrialRunning = false;
+            Debug.Log("Trial ended.");
+            yield break;
         }
+
+        player = GameObject.FindWithTag("Player");
+        playerMovement = player.GetComponent<PlayerMovement>();
+        playerMovement.SetInitialPosition(trial.startX, trial.startY);
+
+        SpriteRenderer spriteRenderer = player.GetComponent<SpriteRenderer>();
+        spriteRenderer.enabled = true;
+
+        CageRenderer cageRenderer = FindObjectOfType<CageRenderer>();
+        if (cageRenderer != null)
+        {
+            yield return new WaitForSecondsRealtime(2.0f);
+            cageRenderer.render = trial.cageRender;
+            cageRenderer.SetColor(trial.isGreen ? Color.green : Color.white);
+        }
+
+        Chaser chaser = FindObjectOfType<Chaser>();
+        if (chaser != null)
+        {
+            yield return new WaitForSecondsRealtime(2.0f);
+            chaser.chaserRender = trial.predRender;
+        }
+
+        if (!trial.showQuestionScreen)
+        {
+            yield return new WaitForSecondsRealtime(2.0f);
+        }
+
+        if (trial.showQuestionScreen)
+        {
+            Time.timeScale = 0;
+            yield return new WaitForSecondsRealtime(2.0f);
+            Time.timeScale = 1;
+
+            ShowMiddleScreen(trial.questionText + ":" + playerQuestionInput.ToString());
+            yield return StartCoroutine(WaitForAnyKey());
+            HideMiddleScreen();
+        }
+
+        Debug.Log("Trial started with parameters: " + trial.ToString());
+        showStartTrialScreen("Trial Started");
+        yield return new WaitForSecondsRealtime(2.0f);
+
+        chaser.chase = trial.predChase;
+        playerMovement.EnableMovement();
+
+        if (trial.predChase)
+        {
+            while (chaser != null && chaser.chase)
+            {
+                hideStartTrialScreen();
+                yield return null;
+            }
+        }
+        else
+        {
+            float trialDuration = 10.0f;
+            hideStartTrialScreen();
+            yield return new WaitForSeconds(trialDuration);
+        }
+
+        isTrialRunning = false;
+        playerMovement.DisableMovement();
+
+        Debug.Log("Trial ended.");
+        showStartTrialScreen("Trial ended.");
+        yield return new WaitForSecondsRealtime(2.0f);
+
+        if (cageRenderer != null)
+        {
+            cageRenderer.SetColor(Color.white);
+        }
+        chaser.chaserRender = false;
+        cageRenderer.render = false;
+        hideStartTrialScreen();
+
+        userVectorInputs = playerMovement.ExportInputRecords();
+        sessionGenerator.PushDataToDatabase(currentTrialIndex, userVectorInputs);
+        Debug.Log(userVectorInputs);
     }
-    else
-    {
-        float trialDuration = 10.0f; 
-        yield return new WaitForSeconds(trialDuration);
-    }
-
-    if (cageRenderer != null)
-    {
-        cageRenderer.SetColor(Color.white);
-    }
-
-    isTrialRunning = false;
-
-
-    playerMovement.DisableMovement();
-    
-    Debug.Log("Trial ended.");
-    sessionGenerator.PushDataToDatabase(currentTrialIndex);
-}
-#endregion
-
-
-
-#region Helper Functions
 
     private void ShowMiddleScreen(string text)
     {
@@ -201,6 +210,23 @@ private IEnumerator StartTrial(Trial trial)
         {
             middleScreenText.text = text;
             middleScreenCanvas.SetActive(true);
+        }
+    }
+
+    private void showStartTrialScreen(string text)
+    {
+        if (startTrialScreenCanvas != null && startTrialScreenText != null)
+        {
+            startTrialScreenText.text = text;
+            startTrialScreenCanvas.SetActive(true);
+        }
+    }
+
+    private void hideStartTrialScreen()
+    {
+        if (startTrialScreenCanvas != null)
+        {
+            startTrialScreenCanvas.SetActive(false);
         }
     }
 
@@ -214,8 +240,18 @@ private IEnumerator StartTrial(Trial trial)
 
     private IEnumerator WaitForAnyKey()
     {
+        float horizontalInput = Input.GetAxis("Horizontal");
+
         while (!Input.anyKeyDown)
         {
+            if (horizontalInput < 0)
+            {
+                playerQuestionInput -= 1;
+            }
+            else if (horizontalInput > 0)
+            {
+                playerQuestionInput += 1;
+            }
             yield return null;
         }
     }
@@ -233,5 +269,3 @@ private IEnumerator StartTrial(Trial trial)
         isTrialRunning = false;
     }
 }
-
-#endregion

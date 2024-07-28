@@ -37,11 +37,12 @@ public class SessionGenerator : MonoBehaviour
         }
     }
 
-    public void PushDataToDatabase(int trialNumber)
+    public void PushDataToDatabase(int trialNumber, Dictionary<float, Vector2> playerInputs)
     {
         persistentDataPath = "https://sprint2-95476-default-rtdb.firebaseio.com/" + trialNumber;
         trialData data = new trialData();   
-        data.trialNumber = trialNumber;     
+        data.trialNumber = trialNumber;  
+        data.vectorInputs = playerInputs; 
         RestClient.Put(persistentDataPath + "/" + trialNumber + "_experiment.json", data);
         Debug.Log($"Data for trial {trialNumber} pushed to database.");
     }
@@ -49,6 +50,7 @@ public class SessionGenerator : MonoBehaviour
     public class trialData {
 
         public int trialNumber;
+        public Dictionary<float, Vector2> vectorInputs;
         
     }
 
