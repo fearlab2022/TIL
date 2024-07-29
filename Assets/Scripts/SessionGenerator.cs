@@ -28,6 +28,8 @@ public class SessionGenerator : MonoBehaviour
     RestClient.Put(persistentDataPath + "/details.json", exp);
     Debug.Log("Experiment Data Pushed");
 
+
+    //TODO: You can assign this. No need for it to be dynamic
     TaskManager taskManager = FindObjectOfType<TaskManager>();
     if (taskManager != null)
     {
@@ -54,6 +56,8 @@ public class SessionGenerator : MonoBehaviour
     Debug.Log($"Data for trial {trialNumber} pushed to database.");
 }
 
+
+//TODO: encapusalte trial data into the trial class. We want to see everything. Input (from csv) and gameplay info.
     public class trialData {
 
         public int trialNumber;
