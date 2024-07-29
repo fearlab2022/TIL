@@ -23,11 +23,8 @@ public class GridManager : MonoBehaviour
     public int Width => width;
     public int Height => height;
 
-
-
     public void GenerateGrid()
     {
-
         tiles = new Tile[width, height];
         for (int x = 0; x < width; x++)
         {
@@ -44,14 +41,11 @@ public class GridManager : MonoBehaviour
 
         cam.transform.position = new Vector3((width - 1) * (1 + gapSize) / 2, (height - 1) * (1 + gapSize) / 2, -10);
         Camera.main.orthographicSize = Mathf.Max(width * (1 + gapSize), height * (1 + gapSize)) / 2f + 1;
-        SetNewLavaTile();
-        StartCoroutine(UpdateLavaTile());
-
+        
         Debug.Log("Grid generated.");
     }
 
-
-    IEnumerator UpdateLavaTile()
+    public IEnumerator UpdateLavaTile()  // Change to public
     {
         while (true)
         {
@@ -60,7 +54,7 @@ public class GridManager : MonoBehaviour
         }
     }
 
-    void SetNewLavaTile()
+    public void SetNewLavaTile()  // Change to public
     {
         foreach (Tile tile in tiles)
         {
@@ -73,17 +67,16 @@ public class GridManager : MonoBehaviour
             int x = Random.Range(0, width);
             int y = Random.Range(0, height);
             newLavaTile = tiles[x, y];
-        } while (Vector3.Distance(newLavaTile.transform.position, Vector3.zero) < 2f); // Ensure it's not too close to (0, 0)
+        } while (Vector3.Distance(newLavaTile.transform.position, Vector3.zero) < 2f);
 
         currentLavaTile = newLavaTile;
         currentLavaTile.SetMaterial(lavaMaterial);
 
-        // Set materials for the tiles around the lava tile
         SetSurroundingTilesMaterial(currentLavaTile.x, currentLavaTile.y, 1, nearLavaMaterial);
         SetSurroundingTilesMaterial(currentLavaTile.x, currentLavaTile.y, 2, secondNearLavaMaterial);
     }
 
-    void SetSurroundingTilesMaterial(int centerX, int centerY, int radius, Material material)
+    private void SetSurroundingTilesMaterial(int centerX, int centerY, int radius, Material material)
     {
         for (int x = -radius; x <= radius; x++)
         {
@@ -114,7 +107,6 @@ public class GridManager : MonoBehaviour
             return tiles[x, y];
         }
 
-        
         return null;
     }
 

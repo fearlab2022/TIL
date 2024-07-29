@@ -1,7 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 
-public class PlayerMovement : MonoBehaviour
+public class Player : MonoBehaviour
 {
     public float moveSpeed = 5f;
     private Vector3 targetPosition;
@@ -20,10 +20,13 @@ public class PlayerMovement : MonoBehaviour
 
     public GameObject cage;
     private CageRenderer cageRenderer;
+    private Rigidbody2D rb; // Assuming 2D physics. Change to Rigidbody for 3D.
 
     private void Start()
     {
         targetPosition = transform.position;
+        rb = GetComponent<Rigidbody2D>(); // Get the Rigidbody2D component if present
+
         if (cage != null)
         {
             cageRenderer = cage.GetComponent<CageRenderer>();
@@ -34,7 +37,7 @@ public class PlayerMovement : MonoBehaviour
 
     private void Update()
     {
-        Debug.Log($"Update called. CanMove: {canMove}, IsMoving: {isMoving}");
+        
         if (canMove)
         {
             if (isMoving)
@@ -147,13 +150,17 @@ public class PlayerMovement : MonoBehaviour
         Debug.Log("DisableMovement called");
         canMove = false;
         isMoving = false;
+        if (rb != null)
+        {
+            rb.velocity = Vector2.zero; // Stop any physics-based movement
+        }
     }
 
     private void OnTriggerEnter2D(Collider2D other)
     {
         if (other.CompareTag("Chaser"))
         {
-            canMove = false;
+            DisableMovement();
             Debug.Log("Player caught by chaser, movement disabled.");
         }
     }

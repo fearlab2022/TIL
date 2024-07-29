@@ -12,8 +12,7 @@ public class TaskManager : MonoBehaviour
     public TextMeshProUGUI startTrialScreenText;
     public TextMeshProUGUI middleScreenText;
 
-    public PlayerMovement playerMovement;
-    public GameObject player;
+    public GameObject player; // Reference to the player GameObject
     public Pathfinding pathfinding;
     public GameObject cage;
     public GridManager gridManager;
@@ -43,27 +42,50 @@ public class TaskManager : MonoBehaviour
 
     private void Start()
     {
+        // Initialize and generate the grid
         gridManager = FindObjectOfType<GridManager>();
         gridManager.GenerateGrid();
+        gridManager.SetNewLavaTile();
 
+        // Initialize pathfinding, player, cage, and chaser
         pathfinding = new Pathfinding(gridManager);
 
         player = GameObject.FindWithTag("Player");
-        playerMovement = player.GetComponent<PlayerMovement>();
+        if (player == null)
+        {
+            Debug.LogError("Player GameObject not found!");
+            return;
+        }
 
         cage = GameObject.Find("Square");
-        CageRenderer cageRenderer = FindObjectOfType<CageRenderer>();
-        cageRenderer.render = false;
-
-        if (playerMovement != null)
+        if (cage == null)
         {
-            playerMovement.Initialize(cage);
+            Debug.LogError("Cage GameObject not found!");
+            return;
+        }
+
+        Player playerScript = player.GetComponent<Player>();
+        if (playerScript == null)
+        {
+            Debug.LogError("Player script component not found on the player GameObject!");
+            return;
+        }
+
+        playerScript.Initialize(cage);
+
+        CageRenderer cageRenderer = cage.GetComponent<CageRenderer>();
+        if (cageRenderer != null)
+        {
+            cageRenderer.render = false;
         }
 
         Chaser chaser = FindObjectOfType<Chaser>();
-        chaser.Initialize(gridManager, player.transform);
-        chaser.chase = false;
-        chaser.chaserRender = false;
+        if (chaser != null)
+        {
+            chaser.Initialize(gridManager, player.transform);
+            chaser.chase = false;
+            chaser.chaserRender = false;
+        }
 
         sessionGenerator = FindObjectOfType<SessionGenerator>();
     }
@@ -111,10 +133,13 @@ public class TaskManager : MonoBehaviour
     {
         isTrialRunning = true;
 
+        Player playerScript = player.GetComponent<Player>();
+        playerScript.DisableMovement();  // Ensure movement is disabled at the start
+
+        // Fixation screen
         if (trial.EOB)
         {
             Time.timeScale = 0;
-            Debug.Log("Fixation Trial");
             ShowMiddleScreen("+");
             yield return new WaitForSecondsRealtime(5.0f);
             Time.timeScale = 1;
@@ -124,14 +149,13 @@ public class TaskManager : MonoBehaviour
             yield break;
         }
 
-        player = GameObject.FindWithTag("Player");
-        playerMovement = player.GetComponent<PlayerMovement>();
-        playerMovement.SetInitialPosition(trial.startX, trial.startY);
-
+        // Transform player to initial position for trial
+        playerScript.SetInitialPosition(trial.startX, trial.startY);
         SpriteRenderer spriteRenderer = player.GetComponent<SpriteRenderer>();
         spriteRenderer.enabled = true;
 
-        CageRenderer cageRenderer = FindObjectOfType<CageRenderer>();
+        // Initialize and show the cage first
+        CageRenderer cageRenderer = cage.GetComponent<CageRenderer>();
         if (cageRenderer != null)
         {
             yield return new WaitForSecondsRealtime(2.0f);
@@ -139,6 +163,7 @@ public class TaskManager : MonoBehaviour
             cageRenderer.SetColor(trial.isGreen ? Color.green : Color.white);
         }
 
+        // Show chaser next
         Chaser chaser = FindObjectOfType<Chaser>();
         if (chaser != null)
         {
@@ -146,11 +171,7 @@ public class TaskManager : MonoBehaviour
             chaser.chaserRender = trial.predRender;
         }
 
-        if (!trial.showQuestionScreen)
-        {
-            yield return new WaitForSecondsRealtime(2.0f);
-        }
-
+        // If a question trial, show the position of player for a few seconds then ask question
         if (trial.showQuestionScreen)
         {
             Time.timeScale = 0;
@@ -162,13 +183,17 @@ public class TaskManager : MonoBehaviour
             HideMiddleScreen();
         }
 
+        // Once all players are rendered in then start the trial
         Debug.Log("Trial started with parameters: " + trial.ToString());
         showStartTrialScreen("Trial Started");
         yield return new WaitForSecondsRealtime(2.0f);
 
+        // Update the lava, allow player to move and chaser to chase
+        StartCoroutine(gridManager.UpdateLavaTile());
+        playerScript.EnableMovement();
         chaser.chase = trial.predChase;
-        playerMovement.EnableMovement();
 
+        // Make the trial end when chaser catches player, if not a chase trial, end the trial in 10s
         if (trial.predChase)
         {
             while (chaser != null && chaser.chase)
@@ -184,8 +209,9 @@ public class TaskManager : MonoBehaviour
             yield return new WaitForSeconds(trialDuration);
         }
 
+        // Trial is finished and player cannot move
         isTrialRunning = false;
-        playerMovement.DisableMovement();
+        playerScript.DisableMovement();
 
         Debug.Log("Trial ended.");
         showStartTrialScreen("Trial ended.");
@@ -199,7 +225,7 @@ public class TaskManager : MonoBehaviour
         cageRenderer.render = false;
         hideStartTrialScreen();
 
-        userVectorInputs = playerMovement.ExportInputRecords();
+        userVectorInputs = playerScript.ExportInputRecords();
         sessionGenerator.PushDataToDatabase(currentTrialIndex, userVectorInputs);
         Debug.Log(userVectorInputs);
     }
@@ -240,18 +266,29 @@ public class TaskManager : MonoBehaviour
 
     private IEnumerator WaitForAnyKey()
     {
-        float horizontalInput = Input.GetAxis("Horizontal");
+        playerQuestionInput = 0;
+        ShowMiddleScreen("This is a question: " + playerQuestionInput.ToString());
 
-        while (!Input.anyKeyDown)
+        while (true)
         {
+            float horizontalInput = Input.GetAxis("Horizontal");
+
             if (horizontalInput < 0)
             {
                 playerQuestionInput -= 1;
+                ShowMiddleScreen("This is a question: " + playerQuestionInput.ToString());
             }
             else if (horizontalInput > 0)
             {
                 playerQuestionInput += 1;
+                ShowMiddleScreen("This is a question: " + playerQuestionInput.ToString());
             }
+
+            if (Input.anyKeyDown)
+            {
+                break;
+            }
+
             yield return null;
         }
     }

@@ -925,7 +925,6 @@ MonoBehaviour:
   startTrialScreenCanvas: {fileID: 2075700588}
   startTrialScreenText: {fileID: 2010582642}
   middleScreenText: {fileID: 2001180349}
-  playerMovement: {fileID: 73751684}
   player: {fileID: 73751681}
   cage: {fileID: 423950412}
   gridManager: {fileID: 637942622}
