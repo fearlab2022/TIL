@@ -2,6 +2,9 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
+using System.Diagnostics;
+using System;
+using UnityEngine.SceneManagement;
 
 public class TaskManager : MonoBehaviour
 {
@@ -16,6 +19,7 @@ public class TaskManager : MonoBehaviour
     public Pathfinding pathfinding;
     public GameObject cage;
     public GridManager gridManager;
+    private Stopwatch stopwatch;
 
     public Dictionary<float, Vector2> userVectorInputs;
 
@@ -26,6 +30,10 @@ public class TaskManager : MonoBehaviour
     private Vector3 chaserStartPosition = new Vector3(4, 4, 0);
     private SessionGenerator sessionGenerator;
     private float playerQuestionInput = 0;
+
+    private bool endStopWatch = false;
+
+    private float trialTime = 0;
 
     private void Awake()
     {
@@ -42,10 +50,13 @@ public class TaskManager : MonoBehaviour
 
     private void Start()
     {
+        
+
         // Initialize and generate the grid
         gridManager = FindObjectOfType<GridManager>();
         gridManager.GenerateGrid();
         gridManager.SetNewLavaTile();
+        stopwatch = new Stopwatch();
 
         // Initialize pathfinding, player, cage, and chaser
         pathfinding = new Pathfinding(gridManager);
@@ -53,21 +64,21 @@ public class TaskManager : MonoBehaviour
         player = GameObject.FindWithTag("Player");
         if (player == null)
         {
-            Debug.LogError("Player GameObject not found!");
+            UnityEngine.Debug.LogError("Player GameObject not found!");
             return;
         }
 
         cage = GameObject.Find("Square");
         if (cage == null)
         {
-            Debug.LogError("Cage GameObject not found!");
+            UnityEngine.Debug.LogError("Cage GameObject not found!");
             return;
         }
 
         Player playerScript = player.GetComponent<Player>();
         if (playerScript == null)
         {
-            Debug.LogError("Player script component not found on the player GameObject!");
+            UnityEngine.Debug.LogError("Player script component not found on the player GameObject!");
             return;
         }
 
@@ -100,7 +111,7 @@ public class TaskManager : MonoBehaviour
         }
         else
         {
-            Debug.LogError("No trials found.");
+            UnityEngine.Debug.LogError("No trials found.");
         }
     }
 
@@ -109,7 +120,7 @@ public class TaskManager : MonoBehaviour
         while (currentTrialIndex < trials.Count)
         {
             Trial currentTrial = trials[currentTrialIndex];
-            Debug.Log("Starting Trial: " + (currentTrialIndex + 1));
+            UnityEngine.Debug.Log("Starting Trial: " + (currentTrialIndex + 1));
 
             SetChaserStartPosition();
             yield return StartCoroutine(StartTrial(currentTrial));
@@ -117,7 +128,7 @@ public class TaskManager : MonoBehaviour
             currentTrialIndex++;
         }
 
-        Debug.Log("All trials completed.");
+        UnityEngine.Debug.Log("All trials completed.");
     }
 
     private void SetChaserStartPosition()
@@ -145,7 +156,7 @@ public class TaskManager : MonoBehaviour
             Time.timeScale = 1;
             HideMiddleScreen();
             isTrialRunning = false;
-            Debug.Log("Trial ended.");
+            UnityEngine.Debug.Log("Trial ended.");
             yield break;
         }
 
@@ -184,20 +195,26 @@ public class TaskManager : MonoBehaviour
         }
 
         // Once all players are rendered in then start the trial
-        Debug.Log("Trial started with parameters: " + trial.ToString());
+        UnityEngine.Debug.Log("Trial started with parameters: " + trial.ToString());
         showStartTrialScreen("Trial Started");
         yield return new WaitForSecondsRealtime(2.0f);
+
 
         // Update the lava, allow player to move and chaser to chase
         StartCoroutine(gridManager.UpdateLavaTile());
         playerScript.EnableMovement();
         chaser.chase = trial.predChase;
 
+
         // Make the trial end when chaser catches player, if not a chase trial, end the trial in 10s
         if (trial.predChase)
         {
+            stopwatch.Reset();
+            stopwatch.Start();
+            endStopWatch = true;
             while (chaser != null && chaser.chase)
             {
+                
                 hideStartTrialScreen();
                 yield return null;
             }
@@ -207,13 +224,23 @@ public class TaskManager : MonoBehaviour
             float trialDuration = 10.0f;
             hideStartTrialScreen();
             yield return new WaitForSeconds(trialDuration);
+            trialTime = 10;
         }
 
+        
+
+    
         // Trial is finished and player cannot move
         isTrialRunning = false;
         playerScript.DisableMovement();
+        if(endStopWatch) {
+            stopwatch.Stop();
+            TimeSpan timespan = stopwatch.Elapsed;
+            trialTime = (float) timespan.TotalSeconds;
+            endStopWatch = false;
+        }
 
-        Debug.Log("Trial ended.");
+        UnityEngine.Debug.Log("Trial ended.");
         showStartTrialScreen("Trial ended.");
         yield return new WaitForSecondsRealtime(2.0f);
 
@@ -226,8 +253,8 @@ public class TaskManager : MonoBehaviour
         hideStartTrialScreen();
 
         userVectorInputs = playerScript.ExportInputRecords();
-        sessionGenerator.PushDataToDatabase(currentTrialIndex, userVectorInputs);
-        Debug.Log(userVectorInputs);
+        sessionGenerator.PushDataToDatabase(currentTrialIndex, userVectorInputs, playerQuestionInput, trialTime);
+        UnityEngine.Debug.Log(userVectorInputs);
     }
 
     private void ShowMiddleScreen(string text)
@@ -265,33 +292,42 @@ public class TaskManager : MonoBehaviour
     }
 
     private IEnumerator WaitForAnyKey()
+{
+    playerQuestionInput = 0;
+    float inputDelay = 0.5f; 
+    float lastInputTime = 0f;
+    ShowMiddleScreen("This is a question: " + playerQuestionInput.ToString());
+
+    while (true)
     {
-        playerQuestionInput = 0;
-        ShowMiddleScreen("This is a question: " + playerQuestionInput.ToString());
+        float horizontalInput = Input.GetAxis("Horizontal");
 
-        while (true)
+        if (Time.time - lastInputTime >= inputDelay)
         {
-            float horizontalInput = Input.GetAxis("Horizontal");
-
             if (horizontalInput < 0)
             {
-                playerQuestionInput -= 1;
+                playerQuestionInput = Mathf.Max(playerQuestionInput - 1, 0);
+                lastInputTime = Time.time; 
                 ShowMiddleScreen("This is a question: " + playerQuestionInput.ToString());
             }
             else if (horizontalInput > 0)
             {
-                playerQuestionInput += 1;
+                playerQuestionInput = Mathf.Min(playerQuestionInput + 1, 10);
+                lastInputTime = Time.time; 
                 ShowMiddleScreen("This is a question: " + playerQuestionInput.ToString());
             }
-
-            if (Input.anyKeyDown)
-            {
-                break;
-            }
-
-            yield return null;
         }
+
+        if (Input.anyKeyDown)
+        {
+
+            break;
+        }
+
+        yield return null;
     }
+}
+
 
     public void EndTrial()
     {
@@ -305,4 +341,6 @@ public class TaskManager : MonoBehaviour
 
         isTrialRunning = false;
     }
+
+    
 }

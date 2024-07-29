@@ -20,12 +20,12 @@ public class Player : MonoBehaviour
 
     public GameObject cage;
     private CageRenderer cageRenderer;
-    private Rigidbody2D rb; // Assuming 2D physics. Change to Rigidbody for 3D.
+    private Rigidbody2D rb; 
 
     private void Start()
     {
         targetPosition = transform.position;
-        rb = GetComponent<Rigidbody2D>(); // Get the Rigidbody2D component if present
+        rb = GetComponent<Rigidbody2D>(); 
 
         if (cage != null)
         {
@@ -53,6 +53,9 @@ public class Player : MonoBehaviour
             {
                 HandleMovement();
             }
+        }
+        if(!canMove) {
+            rb.velocity = Vector2.zero;
         }
     }
 
@@ -150,10 +153,8 @@ public class Player : MonoBehaviour
         Debug.Log("DisableMovement called");
         canMove = false;
         isMoving = false;
-        if (rb != null)
-        {
-            rb.velocity = Vector2.zero; // Stop any physics-based movement
-        }
+        
+        rb.velocity = Vector2.zero;
     }
 
     private void OnTriggerEnter2D(Collider2D other)
