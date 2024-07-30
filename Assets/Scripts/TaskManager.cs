@@ -52,6 +52,10 @@ public class TaskManager : MonoBehaviour
     {
         
 
+
+    
+        // TODO:   Remove this and make grid static object.
+
         // Initialize and generate the grid
         gridManager = FindObjectOfType<GridManager>();
         gridManager.GenerateGrid();
@@ -61,19 +65,24 @@ public class TaskManager : MonoBehaviour
         // Initialize pathfinding, player, cage, and chaser
         pathfinding = new Pathfinding(gridManager);
 
+
+
+        // TODO: Remove this and assign player as a public variable 
         player = GameObject.FindWithTag("Player");
         if (player == null)
         {
             UnityEngine.Debug.LogError("Player GameObject not found!");
             return;
         }
-
+        // TODO: Remove this and assign cage as a public variable 
         cage = GameObject.Find("Square");
         if (cage == null)
         {
             UnityEngine.Debug.LogError("Cage GameObject not found!");
             return;
         }
+
+        //Let's make this a  method under: InitializePlayer()
 
         Player playerScript = player.GetComponent<Player>();
         if (playerScript == null)
@@ -84,12 +93,14 @@ public class TaskManager : MonoBehaviour
 
         playerScript.Initialize(cage);
 
+
+        // Let's make this a method under InitializeCageRenderer()
         CageRenderer cageRenderer = cage.GetComponent<CageRenderer>();
         if (cageRenderer != null)
         {
             cageRenderer.render = false;
         }
-
+        // Let's make this a method under InitializeChaser()
         Chaser chaser = FindObjectOfType<Chaser>();
         if (chaser != null)
         {
@@ -98,9 +109,12 @@ public class TaskManager : MonoBehaviour
             chaser.chaserRender = false;
         }
 
+        //TODO: Assign this as a public var.
         sessionGenerator = FindObjectOfType<SessionGenerator>();
     }
 
+
+    // This belongs in SessionGenerator
     public void InitializeTrials(List<Trial> trialList)
     {
         trials = trialList;
@@ -114,6 +128,9 @@ public class TaskManager : MonoBehaviour
             UnityEngine.Debug.LogError("No trials found.");
         }
     }
+
+
+    //TODO: Change this to be a method
 
     private IEnumerator RunTrials()
     {
@@ -131,6 +148,8 @@ public class TaskManager : MonoBehaviour
         UnityEngine.Debug.Log("All trials completed.");
     }
 
+
+
     private void SetChaserStartPosition()
     {
         Chaser chaser = FindObjectOfType<Chaser>();
@@ -140,10 +159,13 @@ public class TaskManager : MonoBehaviour
         }
     }
 
+
+    // Change name to be TIL_main
     private IEnumerator StartTrial(Trial trial)
     {
         isTrialRunning = true;
 
+        //This should be already assigned at start. no need to have it here
         Player playerScript = player.GetComponent<Player>();
         playerScript.DisableMovement();  // Ensure movement is disabled at the start
 
@@ -157,15 +179,17 @@ public class TaskManager : MonoBehaviour
             HideMiddleScreen();
             isTrialRunning = false;
             UnityEngine.Debug.Log("Trial ended.");
-            yield break;
+            yield break; // do you really need to break here?
         }
 
         // Transform player to initial position for trial
         playerScript.SetInitialPosition(trial.startX, trial.startY);
+        //TODO:  I would disable/enable the whole object not just the sprite renderer
         SpriteRenderer spriteRenderer = player.GetComponent<SpriteRenderer>();
         spriteRenderer.enabled = true;
 
         // Initialize and show the cage first
+        //TODO: Let's just setactive to true/false for the gameobject. Better to minimize script interactions
         CageRenderer cageRenderer = cage.GetComponent<CageRenderer>();
         if (cageRenderer != null)
         {
@@ -175,6 +199,7 @@ public class TaskManager : MonoBehaviour
         }
 
         // Show chaser next
+        //TODO: this should already be assigned already. No need to reassign
         Chaser chaser = FindObjectOfType<Chaser>();
         if (chaser != null)
         {
@@ -196,8 +221,11 @@ public class TaskManager : MonoBehaviour
 
         // Once all players are rendered in then start the trial
         UnityEngine.Debug.Log("Trial started with parameters: " + trial.ToString());
+
+        //TODO: Let's indicate that a player can move by showing a light on the player. See predation game for reference
         showStartTrialScreen("Trial Started");
         yield return new WaitForSecondsRealtime(2.0f);
+
 
 
         // Update the lava, allow player to move and chaser to chase
@@ -205,7 +233,7 @@ public class TaskManager : MonoBehaviour
         playerScript.EnableMovement();
         chaser.chase = trial.predChase;
 
-
+        //TODO: THE TRIAL Should always end in 10 secs. If the predator catches sooner end it early
         // Make the trial end when chaser catches player, if not a chase trial, end the trial in 10s
         if (trial.predChase)
         {
@@ -291,6 +319,9 @@ public class TaskManager : MonoBehaviour
         }
     }
 
+
+
+//They don't have a keyboard in fMRI let's make the scale a visual analog scale w/ left right axis response and trigger for registration
     private IEnumerator WaitForAnyKey()
 {
     playerQuestionInput = 0;
