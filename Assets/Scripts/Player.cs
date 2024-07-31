@@ -1,12 +1,13 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
+using System.Collections;
 
 public class Player : MonoBehaviour
 {
     public float moveSpeed = 5f;
     private Vector3 targetPosition;
     private bool isMoving;
-
     private int minX = 0;
     private int maxX = 9;
     private int minY = 0;
@@ -22,6 +23,7 @@ public class Player : MonoBehaviour
     private CageRenderer cageRenderer;
     private Rigidbody2D rb; 
 
+    private Coroutine recordPositionCoroutine;
     private void Start()
     {
         targetPosition = transform.position;
@@ -58,6 +60,35 @@ public class Player : MonoBehaviour
             rb.velocity = Vector2.zero;
         }
     }
+
+    private IEnumerator RecordVectorandTime(List<PlayerVector> playerVectorList)
+    {
+        while (true)
+        {
+            RecordPositionData(playerVectorList);
+            yield return new WaitForSeconds(0.2f);
+        }
+    }
+
+    private void RecordPositionData(List<PlayerVector> playerVectorList)
+    {
+        Vector3 currentPosition = transform.position;
+        float currentTime = Time.time;
+        playerVectorList.Add(new PlayerVector(currentPosition, currentTime));
+    }
+
+    public void startRecording(List<PlayerVector> playerVectorList)
+        {
+            recordPositionCoroutine = StartCoroutine(RecordVectorandTime(playerVectorList));
+        }
+
+        public void StopRecording()
+        {
+            if (recordPositionCoroutine != null)
+            {
+                StopCoroutine(recordPositionCoroutine);
+            }
+        }
 
     private void HandleMovement()
     {
@@ -136,11 +167,23 @@ public class Player : MonoBehaviour
         }
     }
 
+    public void ActivatePlayer()
+    {
+        gameObject.SetActive(true);
+    }
+    public void DeactivatePlayer()
+    {
+        gameObject.SetActive(false);
+    }
+
     public void SetInitialPosition(float x, float y)
     {
         transform.position = new Vector3(x, y, transform.position.z);
         targetPosition = transform.position;
     }
+
+    
+    
 
     public void EnableMovement()
     {
@@ -174,3 +217,6 @@ public class JoystickInputHandler
     public Vector2 movementInput;
     public float time;
 }
+
+
+

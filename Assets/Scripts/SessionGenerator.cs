@@ -40,16 +40,16 @@ public class SessionGenerator : MonoBehaviour
         Debug.LogError("TaskManager not found!");
     }
 }
-  public void PushDataToDatabase(int trialNumber, Dictionary<float, Vector2> playerInputs, float confidenceValue, float trialTime)
+  public void PushDataToDatabase(int trialNumber, float confidenceValue, float trialTime, List<PlayerVector> positionDataList)
 {
     string trialKey = "trial_" + trialNumber; // Create a unique key for each trial
     string trialPath = persistentDataPath + "/trials/" + trialKey + ".json"; // Nest under /trials/
 
     trialData data = new trialData();
     data.trialNumber = trialNumber;
-    data.vectorInputs = playerInputs;
     data.questionInput = confidenceValue;
     data.trialTime = trialTime;
+    data.positionDataList = positionDataList;
 
     // Push trial data under the experiment's trials path
     RestClient.Put(trialPath, data);
@@ -61,9 +61,9 @@ public class SessionGenerator : MonoBehaviour
     public class trialData {
 
         public int trialNumber;
-        public Dictionary<float, Vector2> vectorInputs;
         public float questionInput;
         public float trialTime;
+        public List<PlayerVector> positionDataList;
     }
 
     public class ExperimentDescription

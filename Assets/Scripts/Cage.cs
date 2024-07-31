@@ -30,4 +30,10 @@ public class CageRenderer : MonoBehaviour
             cageRenderer.material.color = color;
         }
     }
+    public void SetActive() {
+        gameObject.SetActive(true);
+    }
+    public void SetUnactive() {
+        gameObject.SetActive(false);
+    }
 }
