@@ -2,6 +2,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Collections;
+using System;
 
 public class Player : MonoBehaviour
 {
@@ -17,7 +18,7 @@ public class Player : MonoBehaviour
     private bool canMove = false;
 
     private List<JoystickInputHandler> joystickInputsList = new List<JoystickInputHandler>();
-    private Dictionary<float, Vector2> inputRecords = new Dictionary<float, Vector2>();
+    private Dictionary<String, Vector2> inputRecords = new Dictionary<String, Vector2>();
 
     public GameObject cage;
     private CageRenderer cageRenderer;
@@ -61,11 +62,12 @@ public class Player : MonoBehaviour
         }
     }
 
-    private IEnumerator RecordVectorandTime(List<PlayerVector> playerVectorList)
+    private IEnumerator RecordVectorandTime(List<PlayerVector> playerVectorList, List<JoystickInput> joyStickInputList)
     {
         while (true)
         {
             RecordPositionData(playerVectorList);
+            RecordJoyStickInput(joyStickInputList);
             yield return new WaitForSeconds(0.2f);
         }
     }
@@ -73,13 +75,21 @@ public class Player : MonoBehaviour
     private void RecordPositionData(List<PlayerVector> playerVectorList)
     {
         Vector3 currentPosition = transform.position;
-        float currentTime = Time.time;
+        String currentTime = DateTime.Now.ToString();
         playerVectorList.Add(new PlayerVector(currentPosition, currentTime));
     }
+    
+    private void RecordJoyStickInput(List<JoystickInput> joyStickInputList)
+    {
+        float horizontalInput = Input.GetAxis("Horizontal");
+        float verticalInput = Input.GetAxis("Vertical");
+        String currentTime = DateTime.Now.ToString();
+        joyStickInputList.Add(new JoystickInput(horizontalInput, verticalInput, currentTime));
+    }
 
-    public void startRecording(List<PlayerVector> playerVectorList)
+    public void startRecording(List<PlayerVector> playerVectorList, List<JoystickInput> joyStickInputList)
         {
-            recordPositionCoroutine = StartCoroutine(RecordVectorandTime(playerVectorList));
+            recordPositionCoroutine = StartCoroutine(RecordVectorandTime(playerVectorList, joyStickInputList));
         }
 
         public void StopRecording()
@@ -89,6 +99,9 @@ public class Player : MonoBehaviour
                 StopCoroutine(recordPositionCoroutine);
             }
         }
+
+    
+    
 
     private void HandleMovement()
     {
@@ -136,13 +149,8 @@ public class Player : MonoBehaviour
 
     private void RecordInput(Vector2 input)
     {
-        float timestamp = Time.time;
+        String timestamp = DateTime.Now.ToString();
         inputRecords[timestamp] = input;
-    }
-
-    public Dictionary<float, Vector2> ExportInputRecords()
-    {
-        return new Dictionary<float, Vector2>(inputRecords);
     }
 
     private System.Collections.IEnumerator MoveCooldown()

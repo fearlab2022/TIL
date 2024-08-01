@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+
 public class Trial
 {
     public bool predRender;
@@ -9,6 +12,13 @@ public class Trial
     public string questionText;
     public float startX;
     public float startY;
+    public List<PlayerVector> positionDataList;
+    public List<JoystickInput> joystickInputList;
+    public int index;
+    public String startTime;
+    public String endTime;
+    public float playerQuestionInput;
+    public float trialTime;
 
     public Trial(bool predRender, bool cageRender, bool predChase, bool isGreen, bool EOB, bool showQuestionScreen, string questionText, float startX, float startY)
     {
@@ -21,6 +31,12 @@ public class Trial
         this.questionText = questionText;
         this.startX = startX;
         this.startY = startY;
+        this.positionDataList = null;
+        this.joystickInputList = null;
+        this.index = 0;
+        this.startTime = null;
+        this.endTime = null;
+        this.playerQuestionInput = 0;
     }
 
     public Trial(bool predRender, bool cageRender, bool predChase, bool isGreen, bool EOB, bool showQuestionScreen, float startX, float startY)
@@ -33,6 +49,12 @@ public class Trial
         this.showQuestionScreen = showQuestionScreen;
         this.startX = startX;
         this.startY = startY;
+        this.positionDataList = null;
+        this.joystickInputList = null;
+        this.index = 0;
+        this.startTime = null;
+        this.endTime = null;
+        this.playerQuestionInput = 0;
     }
 
     public override string ToString()
@@ -40,3 +62,5 @@ public class Trial
         return $"PredRender: {predRender}, CageRender: {cageRender}, PredChase: {predChase}, IsGreen: {isGreen}, EOB: {EOB}, questionScreen: {showQuestionScreen}, startX: {startX}, startY: {startY}";
     }
 }
+
+//  List<PlayerVector> positionDataList, int index, DateTime startTime, DateTime endTime, int playerQuestionInput

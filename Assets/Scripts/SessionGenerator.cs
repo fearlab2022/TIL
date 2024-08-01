@@ -2,77 +2,71 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Proyecto26;
-
+using System;
 
 public class SessionGenerator : MonoBehaviour
 {
     public string csvFileName = "conditions";
-    private string persistentDataPath;
-
     public int participantID = 01;
 
+    // Assign this in the Unity Editor
+    public TaskManager taskManager;
+
+    private string persistentDataPath;
+
     void Start()
-{
-    CSVReader csvReader = new CSVReader();
-    List<Trial> trials = csvReader.ReadTrialCSV(csvFileName);
-
-    string experimentKey = participantID + "_experiment";
-    persistentDataPath = "https://sprint2-95476-default-rtdb.firebaseio.com/" + experimentKey;
-
-    ExperimentDescription exp = new ExperimentDescription();
-    exp.sessionAdministrator = "Varun Reddy";
-    exp.participantID = participantID;
-    exp.experimentDate = System.DateTime.Now.ToString();
-
-    // Create the experiment entry in the database
-    RestClient.Put(persistentDataPath + "/details.json", exp);
-    Debug.Log("Experiment Data Pushed");
-
-
-    //TODO: You can assign this. No need for it to be dynamic
-    TaskManager taskManager = FindObjectOfType<TaskManager>();
-    if (taskManager != null)
     {
-        taskManager.InitializeTrials(trials);
+        // Initialize the CSV reader and read trials
+        CSVReader csvReader = new CSVReader();
+        List<Trial> trials = csvReader.ReadTrialCSV(csvFileName);
+
+        string experimentKey = participantID + "_experiment";
+        persistentDataPath = "https://sprint2-95476-default-rtdb.firebaseio.com/" + experimentKey;
+
+        ExperimentDescription exp = new ExperimentDescription
+        {
+            sessionAdministrator = "Varun Reddy",
+            participantID = participantID,
+            experimentDate = System.DateTime.Now.ToString()
+        };
+
+        // Create the experiment entry in the database
+        RestClient.Put(persistentDataPath + "/details.json", exp);
+
+        Debug.Log("Experiment Data Pushed");
+
+        // Ensure TaskManager is assigned
+        if (taskManager != null)
+        {
+            taskManager.InitializeTrials(trials);
+        }
+        else
+        {
+            Debug.LogError("TaskManager not assigned!");
+        }
     }
-    else
+
+    public void PushDataToDatabase(Trial trial, int trialNumber, float confidenceValue, float trialTime, List<PlayerVector> positionDataList, String startTime, String endTime, List<JoystickInput> joystickInputList)
     {
-        Debug.LogError("TaskManager not found!");
-    }
-}
-  public void PushDataToDatabase(int trialNumber, float confidenceValue, float trialTime, List<PlayerVector> positionDataList)
-{
-    string trialKey = "trial_" + trialNumber; // Create a unique key for each trial
-    string trialPath = persistentDataPath + "/trials/" + trialKey + ".json"; // Nest under /trials/
+        string trialKey = "trial_" + trialNumber; 
+        string trialPath = persistentDataPath + "/trials/" + trialKey + ".json"; // Nest under /trials/
 
-    trialData data = new trialData();
-    data.trialNumber = trialNumber;
-    data.questionInput = confidenceValue;
-    data.trialTime = trialTime;
-    data.positionDataList = positionDataList;
+        trial.index = trialNumber;
+        trial.playerQuestionInput = confidenceValue;
+        trial.positionDataList = positionDataList;
+        trial.joystickInputList = joystickInputList;
+        trial.startTime = startTime;
+        trial.endTime = endTime;
 
-    // Push trial data under the experiment's trials path
-    RestClient.Put(trialPath, data);
-    Debug.Log($"Data for trial {trialNumber} pushed to database.");
-}
-
-
-//TODO: encapusalte trial data into the trial class. We want to see everything. Input (from csv) and gameplay info.
-    public class trialData {
-
-        public int trialNumber;
-        public float questionInput;
-        public float trialTime;
-        public List<PlayerVector> positionDataList;
+        // Push trial data under the experiment's trials path
+        RestClient.Put(trialPath, trial);
+        Debug.Log($"Data for trial {trialNumber} pushed to database.");
     }
 
     public class ExperimentDescription
-        {
-            public string sessionAdministrator;
-            public int participantID;
-            public string experimentDate;
-        }
-
-
-
+    {
+        public string sessionAdministrator;
+        public int participantID;
+        public string experimentDate;
+    }
 }

@@ -19,6 +19,8 @@ public class TaskManager : MonoBehaviour
     public GridManager gridManager;
     public SessionGenerator sessionGenerator; 
     public Pathfinding pathfinding;
+    public DateTime startTime;
+    public DateTime endTime;
 
     public Dictionary<float, Vector2> userVectorInputs;
 
@@ -28,9 +30,7 @@ public class TaskManager : MonoBehaviour
     private bool isTrialRunning = false;
     private Vector3 chaserStartPosition = new Vector3(4, 4, 0);
     private float playerQuestionInput = 0;
-    private bool endStopWatch = false;
     private float trialTime = 0;
-    private Stopwatch stopwatch;
 
     private void Awake()
     {
@@ -55,7 +55,6 @@ public class TaskManager : MonoBehaviour
         // Initialize and generate the grid
         gridManager.GenerateGrid();
         gridManager.SetNewLavaTile();
-        stopwatch = new Stopwatch();
 
         // Initialize pathfinding
         pathfinding = new Pathfinding(gridManager);
@@ -147,7 +146,9 @@ public class TaskManager : MonoBehaviour
     private IEnumerator StartTrialCoroutine(Trial trial)
     {
         List<PlayerVector> positionDataList = new List<PlayerVector>();
+        List<JoystickInput> joystickInputList = new List<JoystickInput>();
         isTrialRunning = true;
+        
 
         Player playerScript = player.GetComponent<Player>();
         playerScript.DeactivatePlayer();
@@ -168,12 +169,15 @@ public class TaskManager : MonoBehaviour
         }
 
         playerScript.SetInitialPosition(trial.startX, trial.startY);
+
+        // wait a bit to render the player
+        yield return new WaitForSecondsRealtime(2.0f);
         playerScript.ActivatePlayer();
 
         
 
         CageRenderer cageRenderer = cage.GetComponent<CageRenderer>();
-        if (cageRenderer != null)
+        if (trial.cageRender)
         {
             yield return new WaitForSecondsRealtime(2.0f);
             UnityEngine.Debug.Log("flag");
@@ -200,11 +204,15 @@ public class TaskManager : MonoBehaviour
             HideMiddleScreen();
         }
 
+        showStartTrialScreen("Trial Starts Now!");
+        yield return new WaitForSecondsRealtime(1.0f);
         UnityEngine.Debug.Log("Trial started with parameters: " + trial.ToString());
-        showStartTrialScreen("Trial Started");
-        yield return new WaitForSecondsRealtime(2.0f);
 
-        playerScript.startRecording(positionDataList);
+        
+
+        startTime = DateTime.Now;
+
+        playerScript.startRecording(positionDataList, joystickInputList);
 
         StartCoroutine(gridManager.UpdateLavaTile());
         playerScript.EnableMovement();
@@ -212,9 +220,7 @@ public class TaskManager : MonoBehaviour
 
         if (trial.predChase)
         {
-            stopwatch.Reset();
-            stopwatch.Start();
-            endStopWatch = true;
+            
             while (chaser != null && chaser.chase)
             {
                 hideStartTrialScreen();
@@ -226,14 +232,14 @@ public class TaskManager : MonoBehaviour
             float trialDuration = 10.0f;
             hideStartTrialScreen();
             yield return new WaitForSeconds(trialDuration);
-            trialTime = 10;
         }
 
         playerScript.StopRecording();
-        EndTrial(playerScript, chaser, cageRenderer, positionDataList, trials.IndexOf(trial));
+        endTime = DateTime.Now;
+        EndTrial(trial, playerScript, chaser, cageRenderer, positionDataList, trials.IndexOf(trial), startTime, endTime, joystickInputList);
     }
 
-    private void EndTrial(Player playerScript, Chaser chaser, CageRenderer cageRenderer, List<PlayerVector> positionDataList, int index)
+    private void EndTrial(Trial trial, Player playerScript, Chaser chaser, CageRenderer cageRenderer, List<PlayerVector> positionDataList, int index, DateTime startTime, DateTime endTime, List<JoystickInput> joystickInputList)
     {
         isTrialRunning = false;
         playerScript.DisableMovement();
@@ -242,20 +248,16 @@ public class TaskManager : MonoBehaviour
         cageRenderer.render = false;
         chaser.chaserRender = false;
 
-        if (endStopWatch)
-        {
-            stopwatch.Stop();
-            trialTime = (float)stopwatch.Elapsed.TotalSeconds;
-            endStopWatch = false;
-        }
-
         UnityEngine.Debug.Log("Trial ended.");
         showStartTrialScreen("Trial ended.");
         StartCoroutine(HideStartTrialScreenWithDelay());
 
         
         // add logic for pushing data
-        sessionGenerator.PushDataToDatabase(index, playerQuestionInput, trialTime, positionDataList);
+        String startTimeString = startTime.ToString();
+        String endTimeString = endTime.ToString();
+
+        sessionGenerator.PushDataToDatabase(trial, index, playerQuestionInput, trialTime, positionDataList, startTimeString, endTimeString, joystickInputList);
 
     }
     
@@ -279,8 +281,10 @@ public class TaskManager : MonoBehaviour
     {
         if (startTrialScreenCanvas != null && startTrialScreenText != null)
         {
+            
             startTrialScreenText.text = text;
             startTrialScreenCanvas.SetActive(true);
+            UnityEngine.Debug.Log("test flag 1");
         }
     }
 
