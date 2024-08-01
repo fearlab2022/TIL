@@ -32,6 +32,8 @@ public class TaskManager : MonoBehaviour
     private Vector3 chaserStartPosition = new Vector3(4, 4, 0);
     private float playerQuestionInput = 0;
     private float trialTime = 0;
+    private float playerInLavaTime = 0f;
+    private bool isPlayerInLava = false;
 
     private void Awake()
     {
@@ -56,6 +58,7 @@ public class TaskManager : MonoBehaviour
         // Initialize and generate the grid
         gridManager.GenerateGrid();
         gridManager.SetNewLavaTile();
+        
 
         // Initialize pathfinding
         pathfinding = new Pathfinding(gridManager);
@@ -81,6 +84,8 @@ public class TaskManager : MonoBehaviour
             UnityEngine.Debug.LogError("Player script component not found on the player GameObject!");
             return;
         }
+
+        
 
         playerScript.Initialize(cage);
     }
@@ -155,7 +160,8 @@ public class TaskManager : MonoBehaviour
         playerScript.DeactivatePlayer();
         playerScript.DisableMovement();
         
-
+        
+        // TODO, make this a seperate coroutine
 
         if (trial.EOB)
         {
@@ -205,6 +211,9 @@ public class TaskManager : MonoBehaviour
             HideMiddleScreen();
         }
 
+        playerInLavaTime = 0f;
+        isPlayerInLava = false;
+        
         showStartTrialScreen("Trial Starts Now!");
         yield return new WaitForSeconds(1.0f);
         UnityEngine.Debug.Log("Trial started with parameters: " + trial.ToString());
@@ -214,10 +223,14 @@ public class TaskManager : MonoBehaviour
         startTime = DateTime.Now;
 
         playerScript.startRecording(positionDataList, joystickInputList);
-
-        StartCoroutine(gridManager.UpdateLavaTile());
         playerScript.EnableMovement();
+        StartCoroutine(gridManager.UpdateLavaTile());
+        StartCoroutine(CheckPlayerInLavaZone());
+
+
+        // TODO, custom time waiting before predator chase
         chaser.chase = trial.predChase;
+
 
         if (trial.predChase)
             {
@@ -251,15 +264,20 @@ public class TaskManager : MonoBehaviour
         }
 
         playerScript.StopRecording();
+        StopCoroutine(CheckPlayerInLavaZone());
         endTime = DateTime.Now;
-        EndTrial(trial, playerScript, chaser, cageRenderer, positionDataList, trials.IndexOf(trial), startTime, endTime, joystickInputList);
+
+        StopCoroutine(gridManager.UpdateLavaTile());
+        
+
+        EndTrial(trial, playerScript, chaser, cageRenderer, positionDataList, trials.IndexOf(trial), startTime, endTime, joystickInputList, playerInLavaTime);
         showStartTrialScreen("Trial ended.");
         yield return new WaitForSeconds(2.0f);
         hideStartTrialScreen();
         yield return new WaitForSeconds(2.0f);
     }
 
-    private void EndTrial(Trial trial, Player playerScript, Chaser chaser, CageRenderer cageRenderer, List<PlayerVector> positionDataList, int index, DateTime startTime, DateTime endTime, List<JoystickInput> joystickInputList)
+    private void EndTrial(Trial trial, Player playerScript, Chaser chaser, CageRenderer cageRenderer, List<PlayerVector> positionDataList, int index, DateTime startTime, DateTime endTime, List<JoystickInput> joystickInputList, float playerInLavaTime)
     {
         isTrialRunning = false;
         playerScript.DisableMovement();
@@ -267,14 +285,47 @@ public class TaskManager : MonoBehaviour
         cageRenderer.SetColor(Color.white);
         cageRenderer.render = false;
         chaser.chaserRender = false;
+        chaser.chase = false;
+        chaser.transform.position = new Vector3(4,4, chaser.transform.position.z);
 
         
         // add logic for pushing data
         String startTimeString = startTime.ToString();
         String endTimeString = endTime.ToString();
 
-        sessionGenerator.PushDataToDatabase(trial, index, playerQuestionInput, trialTime, positionDataList, startTimeString, endTimeString, joystickInputList);
+        sessionGenerator.PushDataToDatabase(trial, index, playerQuestionInput, trialTime, positionDataList, startTimeString, endTimeString, joystickInputList, playerInLavaTime);
 
+    }
+
+    private IEnumerator CheckPlayerInLavaZone()
+    {
+        while (true)
+        {
+            yield return new WaitForSeconds(0.2f);
+
+            Vector3 playerPosition = player.transform.position;
+            Tile playerTile = gridManager.GetTileAt((int)playerPosition.x, (int)playerPosition.y);
+
+            bool playerInLavaNow = gridManager.GetSurroundingLavaTiles().Contains(playerTile);
+            
+            if (playerInLavaNow)
+            {
+                if (!isPlayerInLava)
+                {
+                    isPlayerInLava = true;
+                }
+                playerInLavaTime += 0.2f; 
+            }
+            else
+            {
+                if (isPlayerInLava)
+                {
+                    isPlayerInLava = false;
+                }
+            }
+
+            UnityEngine.Debug.Log($"Player in lava for: {playerInLavaTime} seconds.");
+        }
     }
     
 

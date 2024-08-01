@@ -1,7 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
 public class GridManager : MonoBehaviour
 {
     [SerializeField] private int width, height;
@@ -19,6 +18,8 @@ public class GridManager : MonoBehaviour
     private Pathfinding pathfinding;
     private Tile currentLavaTile;
     private float lavaUpdateInterval = 2f;
+
+    private List<Tile> surroundingLavaTiles = new List<Tile>();
 
     public int Width => width;
     public int Height => height;
@@ -45,7 +46,7 @@ public class GridManager : MonoBehaviour
         Debug.Log("Grid generated.");
     }
 
-    public IEnumerator UpdateLavaTile()  // Change to public
+    public IEnumerator UpdateLavaTile()
     {
         while (true)
         {
@@ -54,12 +55,14 @@ public class GridManager : MonoBehaviour
         }
     }
 
-    public void SetNewLavaTile()  // Change to public
+    public void SetNewLavaTile()
     {
         foreach (Tile tile in tiles)
         {
             tile.SetMaterial(normalTileMaterial);
         }
+
+        surroundingLavaTiles.Clear();
 
         Tile newLavaTile;
         do
@@ -88,6 +91,7 @@ public class GridManager : MonoBehaviour
                     if (adjacentTile != null)
                     {
                         adjacentTile.SetMaterial(material);
+                        surroundingLavaTiles.Add(adjacentTile);
                     }
                 }
             }
@@ -113,5 +117,10 @@ public class GridManager : MonoBehaviour
     public List<Tile> FindPath(Tile startTile, Tile targetTile)
     {
         return pathfinding.FindPath(startTile, targetTile);
+    }
+
+    public List<Tile> GetSurroundingLavaTiles()
+    {
+        return surroundingLavaTiles;
     }
 }

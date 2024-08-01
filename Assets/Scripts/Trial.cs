@@ -19,6 +19,7 @@ public class Trial
     public String endTime;
     public float playerQuestionInput;
     public float trialTime;
+    public float playerInLavaTime;
 
     public Trial(bool predRender, bool cageRender, bool predChase, bool isGreen, bool EOB, bool showQuestionScreen, string questionText, float startX, float startY)
     {
@@ -37,6 +38,7 @@ public class Trial
         this.startTime = null;
         this.endTime = null;
         this.playerQuestionInput = 0;
+        this.playerInLavaTime = 0;
     }
 
     public Trial(bool predRender, bool cageRender, bool predChase, bool isGreen, bool EOB, bool showQuestionScreen, float startX, float startY)
@@ -55,6 +57,7 @@ public class Trial
         this.startTime = null;
         this.endTime = null;
         this.playerQuestionInput = 0;
+        this.playerInLavaTime = 0;
     }
 
     public override string ToString()

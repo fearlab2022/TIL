@@ -46,7 +46,7 @@ public class SessionGenerator : MonoBehaviour
         }
     }
 
-    public void PushDataToDatabase(Trial trial, int trialNumber, float confidenceValue, float trialTime, List<PlayerVector> positionDataList, String startTime, String endTime, List<JoystickInput> joystickInputList)
+    public void PushDataToDatabase(Trial trial, int trialNumber, float confidenceValue, float trialTime, List<PlayerVector> positionDataList, String startTime, String endTime, List<JoystickInput> joystickInputList, float playerInLavaTime)
     {
         string trialKey = "trial_" + trialNumber; 
         string trialPath = persistentDataPath + "/trials/" + trialKey + ".json"; // Nest under /trials/
@@ -57,6 +57,7 @@ public class SessionGenerator : MonoBehaviour
         trial.joystickInputList = joystickInputList;
         trial.startTime = startTime;
         trial.endTime = endTime;
+        trial.playerInLavaTime = playerInLavaTime;
 
         // Push trial data under the experiment's trials path
         RestClient.Put(trialPath, trial);
