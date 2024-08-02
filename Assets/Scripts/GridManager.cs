@@ -17,7 +17,7 @@ public class GridManager : MonoBehaviour
     private Tile[,] tiles;
     private Pathfinding pathfinding;
     private Tile currentLavaTile;
-    private float lavaUpdateInterval = 2f;
+    private float lavaUpdateInterval = 5f;
 
     private List<Tile> surroundingLavaTiles = new List<Tile>();
 

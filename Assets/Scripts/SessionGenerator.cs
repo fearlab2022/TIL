@@ -9,7 +9,6 @@ public class SessionGenerator : MonoBehaviour
     public string csvFileName = "conditions";
     public int participantID = 01;
 
-    // Assign this in the Unity Editor
     public TaskManager taskManager;
 
     private string persistentDataPath;
@@ -18,7 +17,7 @@ public class SessionGenerator : MonoBehaviour
     {
         // Initialize the CSV reader and read trials
         CSVReader csvReader = new CSVReader();
-        List<Trial> trials = csvReader.ReadTrialCSV(csvFileName);
+        List<TIL_Trial> trials = csvReader.ReadTrialCSV(csvFileName);
 
         string experimentKey = participantID + "_experiment";
         persistentDataPath = "https://sprint2-95476-default-rtdb.firebaseio.com/" + experimentKey;
@@ -36,17 +35,12 @@ public class SessionGenerator : MonoBehaviour
         Debug.Log("Experiment Data Pushed");
 
         // Ensure TaskManager is assigned
-        if (taskManager != null)
-        {
-            taskManager.InitializeTrials(trials);
-        }
-        else
-        {
-            Debug.LogError("TaskManager not assigned!");
-        }
+
+        taskManager.InitializeTrials(trials);
+
     }
 
-    public void PushDataToDatabase(Trial trial, int trialNumber, float confidenceValue, float trialTime, List<PlayerVector> positionDataList, String startTime, String endTime, List<JoystickInput> joystickInputList, float playerInLavaTime)
+    public void PushDataToDatabase(TIL_Trial trial, int trialNumber, float confidenceValue, List<PlayerVector> positionDataList, float startTime, float endTime, float playerShowTimestamp, float cageShowTimestamp, float predShowTimestamp, float playerMoveTimestamp, float questionScreenTimestamp, List<JoystickInput> joystickInputList, float playerInLavaTime, List<PlayerVector> chaserPositionData)
     {
         string trialKey = "trial_" + trialNumber; 
         string trialPath = persistentDataPath + "/trials/" + trialKey + ".json"; // Nest under /trials/
@@ -54,8 +48,16 @@ public class SessionGenerator : MonoBehaviour
         trial.index = trialNumber;
         trial.playerQuestionInput = confidenceValue;
         trial.positionDataList = positionDataList;
+        trial.chaserPositionList = chaserPositionData;
         trial.joystickInputList = joystickInputList;
+
         trial.startTime = startTime;
+        trial.playerMoveTimestamp = playerMoveTimestamp;
+        trial.cageShowTimestamp = cageShowTimestamp;
+        trial.predShowTimestamp = predShowTimestamp;
+        trial.playerShowTimestamp = playerShowTimestamp;
+        trial.questionScreenTimestamp = questionScreenTimestamp;
+
         trial.endTime = endTime;
         trial.playerInLavaTime = playerInLavaTime;
 

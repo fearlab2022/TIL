@@ -11,9 +11,9 @@ public class PlayerVector
     public float x;
     public float y;
     public float z;
-    public String timestamp;
+    public float timestamp;
 
-    public PlayerVector(Vector3 position, String timestamp)
+    public PlayerVector(Vector3 position, float timestamp)
     {
         this.x = position.x;
         this.y = position.y;

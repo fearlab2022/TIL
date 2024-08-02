@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Collections;
 using System;
+using Unity.VisualScripting;
 
 public class Player : MonoBehaviour
 {
@@ -16,19 +17,23 @@ public class Player : MonoBehaviour
 
     public float moveDelay = 0.2f;
     private bool canMove = false;
+    public Color playerColor = new Color(0f, 0f, 255f);
+    public Color activePlayerColor = new Color(173f, 216f, 230f);
 
     private List<JoystickInputHandler> joystickInputsList = new List<JoystickInputHandler>();
-    private Dictionary<String, Vector2> inputRecords = new Dictionary<String, Vector2>();
+    private Dictionary<float, Vector2> inputRecords = new Dictionary<float, Vector2>();
 
     public GameObject cage;
     private CageRenderer cageRenderer;
     private Rigidbody2D rb; 
+    private SpriteRenderer spriteRenderer;
 
     private Coroutine recordPositionCoroutine;
     private void Start()
     {
         targetPosition = transform.position;
         rb = GetComponent<Rigidbody2D>(); 
+        spriteRenderer = GetComponent<SpriteRenderer>();
 
         if (cage != null)
         {
@@ -75,7 +80,7 @@ public class Player : MonoBehaviour
     private void RecordPositionData(List<PlayerVector> playerVectorList)
     {
         Vector3 currentPosition = transform.position;
-        String currentTime = DateTime.Now.ToString();
+        float currentTime = Time.realtimeSinceStartup;
         playerVectorList.Add(new PlayerVector(currentPosition, currentTime));
     }
     
@@ -149,7 +154,7 @@ public class Player : MonoBehaviour
 
     private void RecordInput(Vector2 input)
     {
-        String timestamp = DateTime.Now.ToString();
+        float timestamp = Time.realtimeSinceStartup;
         inputRecords[timestamp] = input;
     }
 
@@ -183,6 +188,15 @@ public class Player : MonoBehaviour
     {
         gameObject.SetActive(false);
     }
+    public void ChangeColor(Color newColor)
+    {
+        if (spriteRenderer != null)
+        {
+            spriteRenderer.color = newColor;
+        }
+    }
+    
+
 
     public void SetInitialPosition(float x, float y)
     {
@@ -225,6 +239,7 @@ public class JoystickInputHandler
     public Vector2 movementInput;
     public float time;
 }
+
 
 
 

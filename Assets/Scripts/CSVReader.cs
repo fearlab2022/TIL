@@ -1,12 +1,13 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.WSA;
 
 public class CSVReader
 {
-    public List<Trial> ReadTrialCSV(string filePath)
+    public List<TIL_Trial> ReadTrialCSV(string filePath)
     {
-        List<Trial> trials = new List<Trial>();
+        List<TIL_Trial> trials = new List<TIL_Trial>();
 
         TextAsset csvFile = Resources.Load<TextAsset>(filePath);
         if (csvFile == null)
@@ -42,7 +43,7 @@ public class CSVReader
                 questionText = data[8].Trim();
             }
 
-            Trial trial = new Trial(predRender, cageRender, predChase, isGreen, EOB, showQuestionScreen, questionText, startX, startY);
+            TIL_Trial trial = new TIL_Trial(predRender, cageRender, predChase, isGreen, EOB, showQuestionScreen, questionText, startX, startY);
             trials.Add(trial);
         }
 

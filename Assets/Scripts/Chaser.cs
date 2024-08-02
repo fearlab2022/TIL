@@ -16,6 +16,8 @@ public class Chaser : MonoBehaviour
     public string persistentDataPath;
 
     private Coroutine chaseCoroutine;
+    private Coroutine recordCoroutine;
+    private List<PlayerVector> chaserPositionDataList = new List<PlayerVector>();
 
     public void Initialize(GridManager gridManager, Transform playerTransform)
     {
@@ -57,6 +59,13 @@ public class Chaser : MonoBehaviour
         {
             StopCoroutine(chaseCoroutine);
             chaseCoroutine = null;
+
+            // Stop recording positions
+            if (recordCoroutine != null)
+            {
+                StopCoroutine(recordCoroutine);
+                recordCoroutine = null;
+            }
         }
         else if (chaseCoroutine == null && chase)
         {
@@ -69,6 +78,7 @@ public class Chaser : MonoBehaviour
         if (chase)
         {
             chaseCoroutine = StartCoroutine(ChasePlayer());
+            recordCoroutine = StartCoroutine(RecordChaserPosition());
         }
     }
 
@@ -107,14 +117,32 @@ public class Chaser : MonoBehaviour
         }
     }
 
+    IEnumerator RecordChaserPosition()
+    {
+        while (chase)
+        {
+            chaserPositionDataList.Add(new PlayerVector(transform.position, Time.realtimeSinceStartup));
+            yield return new WaitForSeconds(0.2f);
+        }
+    }
+
     void OnTriggerEnter2D(Collider2D other)
     {
         if (other.CompareTag("Player"))
         {
-            chase = false; // Stop the chasing
+            chase = false;
 
-            // Call TaskManager to end the trial
             TaskManager.Instance.EndTrial();
         }
+    }
+
+    public List<PlayerVector> GetChaserPositionData()
+    {
+        return new List<PlayerVector>(chaserPositionDataList);
+    }
+
+    public void ClearChaserPositionData()
+    {
+        chaserPositionDataList.Clear();
     }
 }

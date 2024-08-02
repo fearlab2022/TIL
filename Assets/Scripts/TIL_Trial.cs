@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-public class Trial
+public class TIL_Trial
 {
     public bool predRender;
     public bool cageRender;
@@ -13,15 +13,21 @@ public class Trial
     public float startX;
     public float startY;
     public List<PlayerVector> positionDataList;
+    public List<PlayerVector> chaserPositionList;
     public List<JoystickInput> joystickInputList;
     public int index;
-    public String startTime;
-    public String endTime;
+    public float startTime;
+    public float endTime;
+    public float playerShowTimestamp;
+    public float cageShowTimestamp;
+    public float predShowTimestamp;
+    public float playerMoveTimestamp;
+    public float questionScreenTimestamp;
     public float playerQuestionInput;
     public float trialTime;
     public float playerInLavaTime;
 
-    public Trial(bool predRender, bool cageRender, bool predChase, bool isGreen, bool EOB, bool showQuestionScreen, string questionText, float startX, float startY)
+    public TIL_Trial(bool predRender, bool cageRender, bool predChase, bool isGreen, bool EOB, bool showQuestionScreen, string questionText, float startX, float startY)
     {
         this.predRender = predRender;
         this.cageRender = cageRender;
@@ -33,15 +39,22 @@ public class Trial
         this.startX = startX;
         this.startY = startY;
         this.positionDataList = null;
+        this.chaserPositionList = null;
         this.joystickInputList = null;
         this.index = 0;
-        this.startTime = null;
-        this.endTime = null;
+        this.startTime = -1;
+        this.endTime = -1;
+        this.playerShowTimestamp=-1;
+        this.cageShowTimestamp=-1;
+        this.predShowTimestamp=-1;
+        this.playerMoveTimestamp=-1;
+        this.questionScreenTimestamp=-1;
+        this.playerShowTimestamp = -1;
         this.playerQuestionInput = 0;
         this.playerInLavaTime = 0;
     }
 
-    public Trial(bool predRender, bool cageRender, bool predChase, bool isGreen, bool EOB, bool showQuestionScreen, float startX, float startY)
+    public TIL_Trial(bool predRender, bool cageRender, bool predChase, bool isGreen, bool EOB, bool showQuestionScreen, float startX, float startY)
     {
         this.predRender = predRender;
         this.cageRender = cageRender;
@@ -52,10 +65,16 @@ public class Trial
         this.startX = startX;
         this.startY = startY;
         this.positionDataList = null;
+        this.chaserPositionList = null;
         this.joystickInputList = null;
         this.index = 0;
-        this.startTime = null;
-        this.endTime = null;
+        this.startTime = -1;
+        this.endTime = -1;
+        this.playerShowTimestamp=-1;
+        this.cageShowTimestamp=-1;
+        this.predShowTimestamp=-1;
+        this.playerMoveTimestamp=-1;
+        this.questionScreenTimestamp=-1;
         this.playerQuestionInput = 0;
         this.playerInLavaTime = 0;
     }
@@ -66,4 +85,3 @@ public class Trial
     }
 }
 
-//  List<PlayerVector> positionDataList, int index, DateTime startTime, DateTime endTime, int playerQuestionInput

@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System;
 using UnityEngine.SceneManagement;
 using Unity.VisualScripting;
+using UnityEngine.UIElements;
 
 public class TaskManager : MonoBehaviour
 {
@@ -20,18 +21,24 @@ public class TaskManager : MonoBehaviour
     public GridManager gridManager;
     public SessionGenerator sessionGenerator; 
     public Pathfinding pathfinding;
-    public DateTime startTime;
-    public DateTime endTime;
+    public float startTime;
+    public float playerShowTimestamp;
+    public float cageShowTimestamp;
+    public float predShowTimestamp;
+    public float playerMoveTimestamp;
+    public float questionScreenTimestamp;
+    public float endTime;
 
-    public Dictionary<float, Vector2> userVectorInputs;
+    public float TR = 1;
+
+
 
     // Private variables
-    private List<Trial> trials;
+    private List<TIL_Trial> trials;
     private int currentTrialIndex = 0;
     private bool isTrialRunning = false;
     private Vector3 chaserStartPosition = new Vector3(4, 4, 0);
     private float playerQuestionInput = 0;
-    private float trialTime = 0;
     private float playerInLavaTime = 0f;
     private bool isPlayerInLava = false;
 
@@ -51,6 +58,7 @@ public class TaskManager : MonoBehaviour
     private void Start()
     {
         InitializeGame();
+        
     }
 
     private void InitializeGame()
@@ -58,7 +66,6 @@ public class TaskManager : MonoBehaviour
         // Initialize and generate the grid
         gridManager.GenerateGrid();
         gridManager.SetNewLavaTile();
-        
 
         // Initialize pathfinding
         pathfinding = new Pathfinding(gridManager);
@@ -67,72 +74,62 @@ public class TaskManager : MonoBehaviour
         InitializePlayer();
         InitializeCageRenderer();
         InitializeChaser();
+        
     }
 
     private void InitializePlayer()
     {
-        
-        if (player == null)
-        {
-            UnityEngine.Debug.LogError("Player GameObject not assigned!");
-            return;
-        }
-
         Player playerScript = player.GetComponent<Player>();
-        if (playerScript == null)
-        {
-            UnityEngine.Debug.LogError("Player script component not found on the player GameObject!");
-            return;
-        }
-
-        
-
         playerScript.Initialize(cage);
     }
 
     private void InitializeCageRenderer()
     {
         CageRenderer cageRenderer = cage.GetComponent<CageRenderer>();
-        if (cageRenderer != null)
-        {
-            cageRenderer.render = false;
-        }
+        cageRenderer.render = false;
+        
     }
 
     private void InitializeChaser()
     {
         Chaser chaser = FindObjectOfType<Chaser>();
-        if (chaser != null)
-        {
-            chaser.Initialize(gridManager, player.transform);
-            chaser.chase = false;
-            chaser.chaserRender = false;
-        }
+
+        chaser.Initialize(gridManager, player.transform);
+        chaser.chase = false;
+        chaser.chaserRender = false;
+        
     }
 
-    public void InitializeTrials(List<Trial> trialList)
+    public void InitializeTrials(List<TIL_Trial> trialList)
     {
         trials = trialList;
+        StartCoroutine(RunTrialsCoroutine());
 
-        if (trials.Count > 0)
-        {
-            StartCoroutine(RunTrialsCoroutine());
-        }
-        else
-        {
-            UnityEngine.Debug.LogError("No trials found.");
-        }
     }
 
     private IEnumerator RunTrialsCoroutine()
     {
         while (currentTrialIndex < trials.Count)
         {
-            Trial currentTrial = trials[currentTrialIndex];
+
+            TIL_Trial currentTrial = trials[currentTrialIndex];
             UnityEngine.Debug.Log("Starting Trial: " + (currentTrialIndex + 1));
 
-            SetChaserStartPosition();
-            yield return StartCoroutine(StartTrialCoroutine(currentTrial));
+            if (currentTrial.EOB)
+                {
+                    Time.timeScale = 0;
+                    ShowMiddleScreen("+");
+                    yield return new WaitForSecondsRealtime(5.0f);
+                    Time.timeScale = 1;
+                    HideMiddleScreen();
+                    isTrialRunning = false;
+                    UnityEngine.Debug.Log("Trial ended.");
+                }
+
+            else {
+                SetChaserStartPosition();
+                yield return StartCoroutine(TIL_Main(currentTrial));
+            }
 
             currentTrialIndex++;
         }
@@ -143,95 +140,103 @@ public class TaskManager : MonoBehaviour
     private void SetChaserStartPosition()
     {
         Chaser chaser = FindObjectOfType<Chaser>();
-        if (chaser != null)
-        {
-            chaser.transform.position = chaserStartPosition;
-        }
+
+        chaser.transform.position = chaserStartPosition;
     }
 
-    private IEnumerator StartTrialCoroutine(Trial trial)
+    private IEnumerator TIL_Main(TIL_Trial trial)
     {
+        
+        startTime = Time.realtimeSinceStartup;
         List<PlayerVector> positionDataList = new List<PlayerVector>();
         List<JoystickInput> joystickInputList = new List<JoystickInput>();
         isTrialRunning = true;
         
+        // render player
 
         Player playerScript = player.GetComponent<Player>();
         playerScript.DeactivatePlayer();
         playerScript.DisableMovement();
-        
-        
-        // TODO, make this a seperate coroutine
-
-        if (trial.EOB)
-        {
-            Time.timeScale = 0;
-            ShowMiddleScreen("+");
-            yield return new WaitForSecondsRealtime(5.0f);
-            Time.timeScale = 1;
-            HideMiddleScreen();
-            isTrialRunning = false;
-            UnityEngine.Debug.Log("Trial ended.");
-            yield break;
-        }
-
         playerScript.SetInitialPosition(trial.startX, trial.startY);
-
-        // wait a bit to render the player
-        yield return new WaitForSeconds(2.0f);
         playerScript.ActivatePlayer();
+        yield return new WaitForSeconds(2.0f * TR);
+        playerShowTimestamp = Time.realtimeSinceStartup;
 
         
+        // wait between player and cage
+        yield return new WaitForSeconds(2.0f * TR);
+
+        // render cage
 
         CageRenderer cageRenderer = cage.GetComponent<CageRenderer>();
         if (trial.cageRender)
         {
-            yield return new WaitForSeconds(2.0f);
-            UnityEngine.Debug.Log("flag");
+
             cageRenderer.SetActive();
             cageRenderer.render = true;
             cageRenderer.SetColor(trial.isGreen ? Color.green : Color.white);
+            cageShowTimestamp = Time.realtimeSinceStartup;
+
+            
+        }
+        else {
+            cageShowTimestamp = -1;
         }
 
+        // wait between cage and chaser
+        yield return new WaitForSeconds(2.0f * TR);
+
+
+        // render predator
         Chaser chaser = FindObjectOfType<Chaser>();
         if (chaser != null)
         {
             yield return new WaitForSeconds(2.0f);
             chaser.chaserRender = trial.predRender;
+            predShowTimestamp = Time.realtimeSinceStartup;
+            if(!trial.predRender) {
+                predShowTimestamp = -1;
+            }
         }
+
+
+        // wait between predator and next step
+        yield return new WaitForSeconds(2.0f * TR);
+
 
         if (trial.showQuestionScreen)
         {
-            Time.timeScale = 0;
-            yield return new WaitForSecondsRealtime(2.0f);
-            Time.timeScale = 1;
-
+            questionScreenTimestamp = Time.realtimeSinceStartup;
             ShowMiddleScreen(trial.questionText + ":" + playerQuestionInput.ToString());
             yield return StartCoroutine(WaitForAnyKey(trial.questionText));
             HideMiddleScreen();
-        }
 
+            // wait before starting chase and movement
+            yield return new WaitForSeconds(2.0f * TR);
+        }
+        else {
+            questionScreenTimestamp = -1;
+        }
+    
+
+       
+        
+        // player can move
         playerInLavaTime = 0f;
         isPlayerInLava = false;
-        
-        showStartTrialScreen("Trial Starts Now!");
-        yield return new WaitForSeconds(1.0f);
-        UnityEngine.Debug.Log("Trial started with parameters: " + trial.ToString());
-
-        
-
-        startTime = DateTime.Now;
-
+        playerScript.ChangeColor(Color.cyan);
+        playerMoveTimestamp = Time.realtimeSinceStartup;
         playerScript.startRecording(positionDataList, joystickInputList);
         playerScript.EnableMovement();
         StartCoroutine(gridManager.UpdateLavaTile());
         StartCoroutine(CheckPlayerInLavaZone());
 
 
-        // TODO, custom time waiting before predator chase
+        // predator starts chasing
         chaser.chase = trial.predChase;
 
 
+        // run trial until predator catches or until 10 seconds
         if (trial.predChase)
             {
                 float trialDuration = 10.0f;
@@ -263,22 +268,24 @@ public class TaskManager : MonoBehaviour
             yield return new WaitForSeconds(trialDuration);
         }
 
+
+
+        // end of trial data handeling and reseting variables for next trial
         playerScript.StopRecording();
-        StopCoroutine(CheckPlayerInLavaZone());
-        endTime = DateTime.Now;
-
-        StopCoroutine(gridManager.UpdateLavaTile());
         
+        StopCoroutine(gridManager.UpdateLavaTile());
+        StopCoroutine(CheckPlayerInLavaZone());
 
-        EndTrial(trial, playerScript, chaser, cageRenderer, positionDataList, trials.IndexOf(trial), startTime, endTime, joystickInputList, playerInLavaTime);
-        showStartTrialScreen("Trial ended.");
+        endTime = Time.realtimeSinceStartup;
+        EndTrial(trial, playerScript, chaser, cageRenderer, positionDataList, trials.IndexOf(trial), startTime, endTime, playerShowTimestamp, cageShowTimestamp, predShowTimestamp, playerMoveTimestamp, questionScreenTimestamp, joystickInputList, playerInLavaTime);
         yield return new WaitForSeconds(2.0f);
         hideStartTrialScreen();
         yield return new WaitForSeconds(2.0f);
     }
 
-    private void EndTrial(Trial trial, Player playerScript, Chaser chaser, CageRenderer cageRenderer, List<PlayerVector> positionDataList, int index, DateTime startTime, DateTime endTime, List<JoystickInput> joystickInputList, float playerInLavaTime)
+    private void EndTrial(TIL_Trial trial, Player playerScript, Chaser chaser, CageRenderer cageRenderer, List<PlayerVector> positionDataList, int index, float startTime, float endTime, float playerShowTimestamp, float cageShowTimestamp, float predShowTimestamp, float playerMoveTimestamp, float questionScreen,  List<JoystickInput> joystickInputList, float playerInLavaTime)
     {
+        playerScript.ChangeColor(Color.blue);
         isTrialRunning = false;
         playerScript.DisableMovement();
         playerScript.DeactivatePlayer();
@@ -288,12 +295,11 @@ public class TaskManager : MonoBehaviour
         chaser.chase = false;
         chaser.transform.position = new Vector3(4,4, chaser.transform.position.z);
 
-        
-        // add logic for pushing data
-        String startTimeString = startTime.ToString();
-        String endTimeString = endTime.ToString();
+        List<PlayerVector> chaserPositionData = chaser.GetChaserPositionData();
+        chaser.ClearChaserPositionData();
 
-        sessionGenerator.PushDataToDatabase(trial, index, playerQuestionInput, trialTime, positionDataList, startTimeString, endTimeString, joystickInputList, playerInLavaTime);
+        sessionGenerator.PushDataToDatabase(trial, index, playerQuestionInput, positionDataList, startTime, endTime, playerShowTimestamp, cageShowTimestamp, predShowTimestamp, playerMoveTimestamp,  questionScreenTimestamp, joystickInputList, playerInLavaTime, chaserPositionData);
+
 
     }
 
@@ -324,7 +330,6 @@ public class TaskManager : MonoBehaviour
                 }
             }
 
-            UnityEngine.Debug.Log($"Player in lava for: {playerInLavaTime} seconds.");
         }
     }
     
@@ -340,16 +345,7 @@ public class TaskManager : MonoBehaviour
         }
     }
 
-    private void showStartTrialScreen(string text)
-    {
-        if (startTrialScreenCanvas != null && startTrialScreenText != null)
-        {
-            
-            startTrialScreenText.text = text;
-            startTrialScreenCanvas.SetActive(true);
-            UnityEngine.Debug.Log("test flag 1");
-        }
-    }
+
 
     private void hideStartTrialScreen()
     {
