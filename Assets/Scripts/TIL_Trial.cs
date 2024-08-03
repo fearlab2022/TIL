@@ -16,16 +16,9 @@ public class TIL_Trial
     public List<PlayerVector> chaserPositionList;
     public List<JoystickInput> joystickInputList;
     public int index;
-    public float startTime;
-    public float endTime;
-    public float playerShowTimestamp;
-    public float cageShowTimestamp;
-    public float predShowTimestamp;
-    public float playerMoveTimestamp;
-    public float questionScreenTimestamp;
     public float playerQuestionInput;
-    public float trialTime;
     public float playerInLavaTime;
+    public List<TimingDescription> timings;
 
     public TIL_Trial(bool predRender, bool cageRender, bool predChase, bool isGreen, bool EOB, bool showQuestionScreen, string questionText, float startX, float startY)
     {
@@ -42,14 +35,7 @@ public class TIL_Trial
         this.chaserPositionList = null;
         this.joystickInputList = null;
         this.index = 0;
-        this.startTime = -1;
-        this.endTime = -1;
-        this.playerShowTimestamp=-1;
-        this.cageShowTimestamp=-1;
-        this.predShowTimestamp=-1;
-        this.playerMoveTimestamp=-1;
-        this.questionScreenTimestamp=-1;
-        this.playerShowTimestamp = -1;
+        this.timings = null;
         this.playerQuestionInput = 0;
         this.playerInLavaTime = 0;
     }
@@ -68,13 +54,7 @@ public class TIL_Trial
         this.chaserPositionList = null;
         this.joystickInputList = null;
         this.index = 0;
-        this.startTime = -1;
-        this.endTime = -1;
-        this.playerShowTimestamp=-1;
-        this.cageShowTimestamp=-1;
-        this.predShowTimestamp=-1;
-        this.playerMoveTimestamp=-1;
-        this.questionScreenTimestamp=-1;
+        this.timings = null;
         this.playerQuestionInput = 0;
         this.playerInLavaTime = 0;
     }

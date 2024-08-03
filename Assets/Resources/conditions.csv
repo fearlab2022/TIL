@@ -1,6 +1,25 @@
-﻿true, false, true, false, false, true, 1.0, 2.0, "How confident are you right now"
-false, false, false, false, true, false, 2.0, 3.0
-true, true, false, false, false, false, 8.0, 5.0
-true, true, false, true, false, false, 6.0, 7.0
-true, false, true, false, false, true, 1.0, 2.0, "How confident are you right now"
-
+﻿True,False,True,True,False,True,4,3,How confident are you:
+False,True,False,False,True,False,7,1,
+True,True,False,False,False,True,6,8,How confident are you:
+True,False,True,True,True,False,2,5,
+False,True,False,True,False,True,1,6,How confident are you:
+True,True,True,False,True,False,8,4,
+False,False,False,False,True,True,9,7,How confident are you:
+True,True,False,True,False,True,3,6,How confident are you:
+True,False,True,False,True,False,7,2,
+False,True,False,True,False,False,5,1,
+True,False,True,False,True,True,2,9,How confident are you:
+False,False,False,True,True,True,3,7,How confident are you:
+True,True,False,False,False,False,6,5,
+False,True,False,True,True,True,4,2,How confident are you:
+True,False,True,True,False,False,8,3,
+True,True,True,False,True,True,7,6,How confident are you:
+False,False,False,True,False,True,1,8,How confident are you:
+True,False,True,False,True,False,4,9,
+False,True,False,True,False,False,6,2,
+True,True,False,True,True,True,7,5,How confident are you:
+True,False,True,False,True,False,3,7,
+False,False,False,True,False,True,8,4,How confident are you:
+True,True,True,False,True,False,9,2,
+True,False,False,True,True,True,2,6,How confident are you:
+False,True,False,True,False,False,7,8,

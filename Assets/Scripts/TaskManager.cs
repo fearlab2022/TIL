@@ -7,6 +7,7 @@ using System;
 using UnityEngine.SceneManagement;
 using Unity.VisualScripting;
 using UnityEngine.UIElements;
+using System.Linq;
 
 public class TaskManager : MonoBehaviour
 {
@@ -42,6 +43,7 @@ public class TaskManager : MonoBehaviour
     private float playerInLavaTime = 0f;
     private bool isPlayerInLava = false;
 
+    public TimingDescription time = null;
     private void Awake()
     {
         if (Instance == null)
@@ -57,7 +59,9 @@ public class TaskManager : MonoBehaviour
 
     private void Start()
     {
-        InitializeGame();
+
+                InitializeGame();
+            
         
     }
 
@@ -147,7 +151,13 @@ public class TaskManager : MonoBehaviour
     private IEnumerator TIL_Main(TIL_Trial trial)
     {
         
+        List<TimingDescription> timings = new List<TimingDescription>();
+
         startTime = Time.realtimeSinceStartup;
+        time.setDescription("Start Time");
+        time.setTiming(startTime);
+        timings.Add(time.ShallowCopy());
+
         List<PlayerVector> positionDataList = new List<PlayerVector>();
         List<JoystickInput> joystickInputList = new List<JoystickInput>();
         isTrialRunning = true;
@@ -161,6 +171,10 @@ public class TaskManager : MonoBehaviour
         playerScript.ActivatePlayer();
         yield return new WaitForSeconds(2.0f * TR);
         playerShowTimestamp = Time.realtimeSinceStartup;
+
+        time.setDescription("Player Render Time");
+        time.setTiming(playerShowTimestamp);
+        timings.Add(time.ShallowCopy());
 
         
         // wait between player and cage
@@ -176,12 +190,13 @@ public class TaskManager : MonoBehaviour
             cageRenderer.render = true;
             cageRenderer.SetColor(trial.isGreen ? Color.green : Color.white);
             cageShowTimestamp = Time.realtimeSinceStartup;
+            
 
             
         }
-        else {
-            cageShowTimestamp = -1;
-        }
+        time.setDescription("Cage Render Time");
+        time.setTiming(cageShowTimestamp);
+        timings.Add(time.ShallowCopy());
 
         // wait between cage and chaser
         yield return new WaitForSeconds(2.0f * TR);
@@ -189,15 +204,16 @@ public class TaskManager : MonoBehaviour
 
         // render predator
         Chaser chaser = FindObjectOfType<Chaser>();
-        if (chaser != null)
-        {
-            yield return new WaitForSeconds(2.0f);
-            chaser.chaserRender = trial.predRender;
-            predShowTimestamp = Time.realtimeSinceStartup;
-            if(!trial.predRender) {
-                predShowTimestamp = -1;
-            }
-        }
+
+        yield return new WaitForSeconds(2.0f);
+        chaser.chaserRender = trial.predRender;
+        predShowTimestamp = Time.realtimeSinceStartup;
+
+        time.setDescription("Predator Render Time");
+        time.setTiming(predShowTimestamp);
+        timings.Add(time.ShallowCopy());
+
+        
 
 
         // wait between predator and next step
@@ -214,9 +230,10 @@ public class TaskManager : MonoBehaviour
             // wait before starting chase and movement
             yield return new WaitForSeconds(2.0f * TR);
         }
-        else {
-            questionScreenTimestamp = -1;
-        }
+
+        time.setDescription("Question Screen Timestamp");
+        time.setTiming(questionScreenTimestamp);
+        timings.Add(time.ShallowCopy());
     
 
        
@@ -226,10 +243,19 @@ public class TaskManager : MonoBehaviour
         isPlayerInLava = false;
         playerScript.ChangeColor(Color.cyan);
         playerMoveTimestamp = Time.realtimeSinceStartup;
+        
+        InvokeRepeating("runGridLavaUpdate", 0, 2f);
+        InvokeRepeating("CheckPlayerInLavaZone", 0, 0.2f);
+
+        time.setDescription("Player Move Timestamp");
+        time.setTiming(playerMoveTimestamp);
+        timings.Add(time.ShallowCopy());
+
+        
         playerScript.startRecording(positionDataList, joystickInputList);
         playerScript.EnableMovement();
-        StartCoroutine(gridManager.UpdateLavaTile());
-        StartCoroutine(CheckPlayerInLavaZone());
+        
+        
 
 
         // predator starts chasing
@@ -268,22 +294,26 @@ public class TaskManager : MonoBehaviour
             yield return new WaitForSeconds(trialDuration);
         }
 
+        
 
 
+        chaser.chaserRender = false;
+        chaser.chase = false;
         // end of trial data handeling and reseting variables for next trial
         playerScript.StopRecording();
-        
-        StopCoroutine(gridManager.UpdateLavaTile());
-        StopCoroutine(CheckPlayerInLavaZone());
-
         endTime = Time.realtimeSinceStartup;
-        EndTrial(trial, playerScript, chaser, cageRenderer, positionDataList, trials.IndexOf(trial), startTime, endTime, playerShowTimestamp, cageShowTimestamp, predShowTimestamp, playerMoveTimestamp, questionScreenTimestamp, joystickInputList, playerInLavaTime);
+        time.setDescription("Ending Time");
+        time.setTiming(endTime);
+        timings.Add(time.ShallowCopy());
+        CancelInvoke();
+
+        EndTrial(trial, playerScript, chaser, cageRenderer, positionDataList, trials.IndexOf(trial), timings, joystickInputList, playerInLavaTime);
         yield return new WaitForSeconds(2.0f);
         hideStartTrialScreen();
         yield return new WaitForSeconds(2.0f);
     }
 
-    private void EndTrial(TIL_Trial trial, Player playerScript, Chaser chaser, CageRenderer cageRenderer, List<PlayerVector> positionDataList, int index, float startTime, float endTime, float playerShowTimestamp, float cageShowTimestamp, float predShowTimestamp, float playerMoveTimestamp, float questionScreen,  List<JoystickInput> joystickInputList, float playerInLavaTime)
+    private void EndTrial(TIL_Trial trial, Player playerScript, Chaser chaser, CageRenderer cageRenderer, List<PlayerVector> positionDataList, int index, List<TimingDescription> timings,  List<JoystickInput> joystickInputList, float playerInLavaTime)
     {
         playerScript.ChangeColor(Color.blue);
         isTrialRunning = false;
@@ -291,23 +321,25 @@ public class TaskManager : MonoBehaviour
         playerScript.DeactivatePlayer();
         cageRenderer.SetColor(Color.white);
         cageRenderer.render = false;
-        chaser.chaserRender = false;
-        chaser.chase = false;
+        
         chaser.transform.position = new Vector3(4,4, chaser.transform.position.z);
 
         List<PlayerVector> chaserPositionData = chaser.GetChaserPositionData();
         chaser.ClearChaserPositionData();
 
-        sessionGenerator.PushDataToDatabase(trial, index, playerQuestionInput, positionDataList, startTime, endTime, playerShowTimestamp, cageShowTimestamp, predShowTimestamp, playerMoveTimestamp,  questionScreenTimestamp, joystickInputList, playerInLavaTime, chaserPositionData);
+        sessionGenerator.PushDataToDatabase(trial, index, playerQuestionInput, positionDataList, timings, joystickInputList, playerInLavaTime, chaserPositionData);
 
 
     }
 
-    private IEnumerator CheckPlayerInLavaZone()
+    public void runGridLavaUpdate() {
+        gridManager.SetNewLavaTile();
+    }
+
+
+    private void CheckPlayerInLavaZone()
     {
-        while (true)
-        {
-            yield return new WaitForSeconds(0.2f);
+
 
             Vector3 playerPosition = player.transform.position;
             Tile playerTile = gridManager.GetTileAt((int)playerPosition.x, (int)playerPosition.y);
@@ -330,7 +362,7 @@ public class TaskManager : MonoBehaviour
                 }
             }
 
-        }
+        
     }
     
 
@@ -399,16 +431,4 @@ public class TaskManager : MonoBehaviour
         }
     }
 
-    public void EndTrial()
-    {
-        if (!isTrialRunning) return;
-
-        Chaser chaser = FindObjectOfType<Chaser>();
-        if (chaser != null)
-        {
-            chaser.chase = false;
-        }
-
-        isTrialRunning = false;
-    }
 }

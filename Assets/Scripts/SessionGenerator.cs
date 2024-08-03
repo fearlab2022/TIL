@@ -10,37 +10,41 @@ public class SessionGenerator : MonoBehaviour
     public int participantID = 01;
 
     public TaskManager taskManager;
+    public GameObject task;
 
     private string persistentDataPath;
 
     void Start()
     {
         // Initialize the CSV reader and read trials
-        CSVReader csvReader = new CSVReader();
-        List<TIL_Trial> trials = csvReader.ReadTrialCSV(csvFileName);
 
-        string experimentKey = participantID + "_experiment";
-        persistentDataPath = "https://sprint2-95476-default-rtdb.firebaseio.com/" + experimentKey;
+                CSVReader csvReader = new CSVReader();
+                List<TIL_Trial> trials = csvReader.ReadTrialCSV(csvFileName);
 
-        ExperimentDescription exp = new ExperimentDescription
-        {
-            sessionAdministrator = "Varun Reddy",
-            participantID = participantID,
-            experimentDate = System.DateTime.Now.ToString()
-        };
+                string experimentKey = participantID + "_experiment";
+                persistentDataPath = "https://sprint2-95476-default-rtdb.firebaseio.com/" + experimentKey;
 
-        // Create the experiment entry in the database
-        RestClient.Put(persistentDataPath + "/details.json", exp);
+                ExperimentDescription exp = new ExperimentDescription
+                {
+                    sessionAdministrator = "Varun Reddy",
+                    participantID = participantID,
+                    experimentDate = System.DateTime.Now.ToString()
+                };
 
-        Debug.Log("Experiment Data Pushed");
+                // Create the experiment entry in the database
+                RestClient.Put(persistentDataPath + "/details.json", exp);
 
-        // Ensure TaskManager is assigned
+                Debug.Log("Experiment Data Pushed");
 
-        taskManager.InitializeTrials(trials);
+                // Ensure TaskManager is assigned
+                task.SetActive(true);
+                taskManager.InitializeTrials(trials);
+            
+
 
     }
 
-    public void PushDataToDatabase(TIL_Trial trial, int trialNumber, float confidenceValue, List<PlayerVector> positionDataList, float startTime, float endTime, float playerShowTimestamp, float cageShowTimestamp, float predShowTimestamp, float playerMoveTimestamp, float questionScreenTimestamp, List<JoystickInput> joystickInputList, float playerInLavaTime, List<PlayerVector> chaserPositionData)
+    public void PushDataToDatabase(TIL_Trial trial, int trialNumber, float confidenceValue, List<PlayerVector> positionDataList, List<TimingDescription> timings, List<JoystickInput> joystickInputList, float playerInLavaTime, List<PlayerVector> chaserPositionData)
     {
         string trialKey = "trial_" + trialNumber; 
         string trialPath = persistentDataPath + "/trials/" + trialKey + ".json"; // Nest under /trials/
@@ -51,14 +55,7 @@ public class SessionGenerator : MonoBehaviour
         trial.chaserPositionList = chaserPositionData;
         trial.joystickInputList = joystickInputList;
 
-        trial.startTime = startTime;
-        trial.playerMoveTimestamp = playerMoveTimestamp;
-        trial.cageShowTimestamp = cageShowTimestamp;
-        trial.predShowTimestamp = predShowTimestamp;
-        trial.playerShowTimestamp = playerShowTimestamp;
-        trial.questionScreenTimestamp = questionScreenTimestamp;
-
-        trial.endTime = endTime;
+        trial.timings = timings;
         trial.playerInLavaTime = playerInLavaTime;
 
         // Push trial data under the experiment's trials path

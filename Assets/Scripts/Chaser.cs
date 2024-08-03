@@ -132,7 +132,6 @@ public class Chaser : MonoBehaviour
         {
             chase = false;
 
-            TaskManager.Instance.EndTrial();
         }
     }
 
