@@ -28,4 +28,8 @@ public class TIL_Predator : MonoBehaviour
     {
         
     }
+    public void setColor(int predatorState)
+    {
+        
+    }
 }

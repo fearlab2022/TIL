@@ -96,6 +96,7 @@ public class TILTask : MonoBehaviour
         if(predatorState == 0) predator.SetActive(false);
         else
         {
+            predator.GetComponent<TIL_Predator>().setColor(predatorState);
             predator.SetActive(true);
         }
     }
