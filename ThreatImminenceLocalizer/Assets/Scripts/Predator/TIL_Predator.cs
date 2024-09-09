@@ -18,4 +18,14 @@ public class TIL_Predator : MonoBehaviour
             Debug.Log($"Pos: {predatorPositon}, Time: {time}");
         }
     }
+
+    public void calculateAttack(float attackingSteps)
+    {
+
+    }
+
+    public void resetPredator()
+    {
+        
+    }
 }

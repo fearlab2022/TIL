@@ -26,6 +26,8 @@ public class TILTask : MonoBehaviour
     public bool shouldStopCoroutine = false;
     private Coroutine freeMovementCoroutine; // Reference to store the coroutine
     private float freeMovementTime;
+
+    
     public enum GameState
         {
             SpawningPeriod,
@@ -41,7 +43,7 @@ public class TILTask : MonoBehaviour
     public void StartNextTrial()
     {
         int trialNum = PlayerPrefs.GetInt("trialNum");
-        trial = SessionGenerator.trials[trialNum];
+        trial = sessionGenerator.trials[trialNum];
         trialOnsetTime = Time.realtimeSinceStartup;
         HandleGameState(GameState.SpawningPeriod);
 
@@ -76,7 +78,7 @@ public class TILTask : MonoBehaviour
         threatStateEnvi[trial.threatState].SetActive(true);
         spawnPredator(trial.predatorState);
         yield return new WaitForSeconds(1.0f);
-        spawnPlayer(trial.preyPosX, trial.preyPosY);
+        spawnPlayer(trial.preyPosX, trial.preyPosY, player);
         yield return new WaitForSeconds(1.0f);
         GameState gameState = trial.stimType == 1 ? GameState.SubjectiveResponsePeriod : GameState.FreeMovementPeriod;
         HandleGameState(gameState);
@@ -178,12 +180,12 @@ public class TILTask : MonoBehaviour
         int trialNum = PlayerPrefs.GetInt("trialNum");
 
         Debug.Log("pushing trial data");
-        SessionGenerator.writeTrialData(trial, trialNum);
+        sessionGenerator.pushTrialData(trial);
 
         trialNum++;
         PlayerPrefs.SetInt("trialNum", trialNum);
 
-        if (trialNum < SessionGenerator.numTrials)
+        if (trialNum < sessionGenerator.numTrials)
         {
             Debug.Log($"trialNum {trialNum}");
             StartNextTrial();
@@ -197,8 +199,8 @@ public class TILTask : MonoBehaviour
 
     private void ResetTrialSettings()
     {
-        player.GetComponent<TIL_PlayerManager>().reset();
-        predator.GetComponent<TIL_Predator>().reset();
+        player.GetComponent<TIL_PlayerManager>().resetPlayer();
+        predator.GetComponent<TIL_Predator>().resetPredator();
     }
 
     #endregion 

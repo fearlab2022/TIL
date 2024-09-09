@@ -12,6 +12,16 @@ public class TIL_PlayerManager : MonoBehaviour
         // You can add any additional player logic here if needed
     }
 
+    public void enableMovement()
+    {
+
+    }
+
+    public void resetPlayer()
+    {
+        
+    }
+
     // Detect when the player enters a trigger collider
     // void OnTriggerEnter2D(Collider2D other)
     // {

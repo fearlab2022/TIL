@@ -15,6 +15,7 @@ public class SessionGenerator : MonoBehaviour
 
     public GameObject task;
     public List<TILTrial> trials;
+    public int numTrials;
     public TILTrial trial;
     public ExperimentDescription exp;
     public string persistentDataPath;
@@ -69,7 +70,7 @@ public class SessionGenerator : MonoBehaviour
         File.WriteAllText(persistentDataPath+"/system_log_"+ppid+".txt", "=== TIL FMRI ===" + "\n");
     }
 
-    public void pushTrialData(PredatorTrial trialRecieved)
+    public void pushTrialData(TILTrial trialRecieved)
     {
         int trial_num = PlayerPrefs.GetInt("trial_num");
         trial = trialRecieved;
@@ -77,7 +78,7 @@ public class SessionGenerator : MonoBehaviour
         writeToLog("Trial"+trial_num+" recorded as json");
     }
 
-    private void pushToJson(int trial_num, string attributeName, PredatorTrial attribute)
+    private void pushToJson(int trial_num, string attributeName, TILTrial attribute)
     {
         string jsonData = JsonUtility.ToJson(attribute); // Convert the data object to JSON
         File.WriteAllText(persistentDataPath+"/"+attributeName+".json", jsonData);
